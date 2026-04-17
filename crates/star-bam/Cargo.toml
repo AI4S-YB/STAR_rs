@@ -1,0 +1,16 @@
+[package]
+name = "star-bam"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR BAM output (via noodles)"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+noodles-bgzf = { workspace = true, features = ["libdeflate"] }
+noodles-bam = { workspace = true }
+noodles-sam = { workspace = true }
+star-core.workspace = true
+star-params.workspace = true

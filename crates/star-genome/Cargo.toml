@@ -1,0 +1,16 @@
+[package]
+name = "star-genome"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR genome index I/O + genomeGenerate"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+memmap2.workspace = true
+rayon.workspace = true
+byteorder.workspace = true
+star-core.workspace = true
+star-params.workspace = true

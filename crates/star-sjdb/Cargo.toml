@@ -1,0 +1,13 @@
+[package]
+name = "star-sjdb"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR SJ DB + 2-pass"
+
+[dependencies]
+anyhow.workspace = true
+star-core.workspace = true
+star-params.workspace = true
+star-genome.workspace = true

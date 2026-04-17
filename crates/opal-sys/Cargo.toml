@@ -1,0 +1,14 @@
+[package]
+name = "opal-sys"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+description = "FFI wrapper for the upstream STAR opal (AVX2 SIMD SW)"
+build = "build.rs"
+links = "star_opal"
+
+[dependencies]
+
+[build-dependencies]
+cc = "1"

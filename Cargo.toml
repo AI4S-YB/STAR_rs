@@ -1,0 +1,57 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/star-core",
+    "crates/star-params",
+    "crates/star-genome",
+    "crates/star-io",
+    "crates/star-align",
+    "crates/star-chimeric",
+    "crates/star-quant",
+    "crates/star-bam",
+    "crates/star-sjdb",
+    "crates/star-stats",
+    "crates/opal-sys",
+    "crates/star-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+repository = "https://github.com/example/star-rs"
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "1"
+memmap2 = "0.9"
+rayon = "1.10"
+parking_lot = "0.12"
+byteorder = "1.5"
+noodles = { version = "0.109", default-features = false, features = ["bam", "bgzf", "sam"] }
+noodles-bgzf = "0.46"
+noodles-bam = "0.88"
+noodles-sam = "0.84"
+flate2 = "1.0"
+libc = "0.2"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+# workspace-internal crates
+star-core = { path = "crates/star-core" }
+star-params = { path = "crates/star-params" }
+star-genome = { path = "crates/star-genome" }
+star-io = { path = "crates/star-io" }
+star-align = { path = "crates/star-align" }
+star-chimeric = { path = "crates/star-chimeric" }
+star-quant = { path = "crates/star-quant" }
+star-bam = { path = "crates/star-bam" }
+star-sjdb = { path = "crates/star-sjdb" }
+star-stats = { path = "crates/star-stats" }
+opal-sys = { path = "crates/opal-sys" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+opt-level = 3
+debug = 1

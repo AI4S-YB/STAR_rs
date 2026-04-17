@@ -1,0 +1,18 @@
+[package]
+name = "star-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR core types, PackedArray, SequenceFuns, serviceFuns; 1:1 port foundation"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+libc.workspace = true
+
+[features]
+default = []
+# Enables COMPILE_FOR_LONG_READS (STARlong) parameter scaling.
+long-reads = []

@@ -1,0 +1,11 @@
+chr1	mk	gene	100	400	.	+	.	gene_id "geneA"; gene_name "geneA_n"; gene_biotype "protein_coding";
+chr1	mk	transcript	100	400	.	+	.	gene_id "geneA"; transcript_id "tA"; gene_name "geneA_n"; gene_biotype "protein_coding";
+chr1	mk	exon	100	199	.	+	.	gene_id "geneA"; transcript_id "tA"; gene_name "geneA_n"; gene_biotype "protein_coding"; exon_number "1";
+chr1	mk	exon	300	399	.	+	.	gene_id "geneA"; transcript_id "tA"; gene_name "geneA_n"; gene_biotype "protein_coding"; exon_number "2";
+chr1	mk	gene	800	900	.	-	.	gene_id "geneB"; gene_name "geneB_n"; gene_biotype "protein_coding";
+chr1	mk	transcript	800	900	.	-	.	gene_id "geneB"; transcript_id "tB"; gene_name "geneB_n"; gene_biotype "protein_coding";
+chr1	mk	exon	800	899	.	-	.	gene_id "geneB"; transcript_id "tB"; gene_name "geneB_n"; gene_biotype "protein_coding"; exon_number "1";
+chr1	mk	gene	1200	1500	.	+	.	gene_id "geneC"; gene_name "geneC_n"; gene_biotype "protein_coding";
+chr1	mk	transcript	1200	1500	.	+	.	gene_id "geneC"; transcript_id "tC"; gene_name "geneC_n"; gene_biotype "protein_coding";
+chr1	mk	exon	1200	1299	.	+	.	gene_id "geneC"; transcript_id "tC"; gene_name "geneC_n"; gene_biotype "protein_coding"; exon_number "1";
+chr1	mk	exon	1400	1499	.	+	.	gene_id "geneC"; transcript_id "tC"; gene_name "geneC_n"; gene_biotype "protein_coding"; exon_number "2";

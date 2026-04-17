@@ -1,0 +1,16 @@
+[package]
+name = "star-io"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR input/output streams, read loading"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+flate2.workspace = true
+parking_lot.workspace = true
+star-core.workspace = true
+star-params.workspace = true
+star-genome.workspace = true

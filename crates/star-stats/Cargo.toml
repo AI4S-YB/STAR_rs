@@ -1,0 +1,12 @@
+[package]
+name = "star-stats"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR Stats + Log.final.out"
+
+[dependencies]
+anyhow.workspace = true
+star-core.workspace = true
+star-params.workspace = true

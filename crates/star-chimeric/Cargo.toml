@@ -1,0 +1,14 @@
+[package]
+name = "star-chimeric"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "STAR chimeric detection"
+
+[dependencies]
+anyhow.workspace = true
+star-core.workspace = true
+star-params.workspace = true
+star-align.workspace = true
+star-genome.workspace = true
