@@ -20,7 +20,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
-repository = "https://github.com/example/star-rs"
+repository = "https://github.com/AI4S-YB/STAR_rs"
 
 [workspace.dependencies]
 anyhow = "1"
