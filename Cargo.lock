@@ -431,7 +431,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "opal-sys"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "cc",
 ]
@@ -574,7 +574,7 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 
 [[package]]
 name = "star-align"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "opal-sys",
@@ -590,7 +590,7 @@ dependencies = [
 
 [[package]]
 name = "star-bam"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "bstr",
@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "star-chimeric"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "star-align",
@@ -616,7 +616,7 @@ dependencies = [
 
 [[package]]
 name = "star-cli"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "star-align",
@@ -633,7 +633,7 @@ dependencies = [
 
 [[package]]
 name = "star-core"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -643,7 +643,7 @@ dependencies = [
 
 [[package]]
 name = "star-genome"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -656,7 +656,7 @@ dependencies = [
 
 [[package]]
 name = "star-io"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "flate2",
@@ -669,7 +669,7 @@ dependencies = [
 
 [[package]]
 name = "star-params"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -679,7 +679,7 @@ dependencies = [
 
 [[package]]
 name = "star-quant"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "star-align",
@@ -689,7 +689,7 @@ dependencies = [
 
 [[package]]
 name = "star-sjdb"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "star-core",
@@ -699,7 +699,7 @@ dependencies = [
 
 [[package]]
 name = "star-stats"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "star-core",
