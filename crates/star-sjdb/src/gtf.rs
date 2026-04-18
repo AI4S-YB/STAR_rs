@@ -120,7 +120,7 @@ impl Gtf {
 
             let tr_names = vec![p.p_ge.sjdb_gtf_tag_exon_parent_transcript.clone()];
             let ge_names = vec![p.p_ge.sjdb_gtf_tag_exon_parent_gene.clone()];
-            let mut ex_attr = vec![
+            let mut ex_attr = [
                 extract_attr(&rec.attrs, &tr_names).unwrap_or_default(),
                 extract_attr(&rec.attrs, &ge_names).unwrap_or_default(),
                 extract_attr(&rec.attrs, &p.p_ge.sjdb_gtf_tag_exon_parent_gene_name)
