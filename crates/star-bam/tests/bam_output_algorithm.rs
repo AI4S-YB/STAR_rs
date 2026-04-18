@@ -53,3 +53,49 @@ fn bin_record_meta_sort_order() {
     let coords: Vec<_> = metas.iter().map(|m| (m.coord, m.i_read)).collect();
     assert_eq!(coords, vec![(50, 1), (50, 9), (100, 3), (100, 5)]);
 }
+
+use star_bam::bam_output::BamOutput;
+use std::path::PathBuf;
+
+fn tmp_dir(test_name: &str) -> PathBuf {
+    let base = std::env::temp_dir().join(format!("star-bam-test-{test_name}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&base);
+    std::fs::create_dir_all(&base).unwrap();
+    base
+}
+
+/// Build a fake BAM record bytes payload with the noodles record's
+/// serialised form. For phase-2a tests we only care about ref_id/pos
+/// extraction and the bam_bytes blob round-trip.
+fn fake_bam_bytes(n: usize) -> Vec<u8> {
+    // 4-byte block_size prefix (value unused by our sort path) + payload.
+    let mut v = vec![0u8; 4 + n];
+    v[0..4].copy_from_slice(&(n as u32).to_le_bytes());
+    for (i, byte) in v[4..].iter_mut().enumerate() {
+        *byte = (i % 251) as u8;
+    }
+    v
+}
+
+#[test]
+fn coord_one_align_single_bin_accumulates() {
+    let dir = tmp_dir("single-bin");
+    let mut out = BamOutput::new(0, &dir, /* n_bins */ 50, /* chunk_bytes */ 1 << 16).unwrap();
+    // feed 3 mapped records
+    for i in 0..3u64 {
+        out.coord_one_align(1, 1000 + i as u32, i, fake_bam_bytes(40)).unwrap();
+    }
+    // all should still be in bin 0 (pre-coord_bins)
+    assert_eq!(out.bin_total_n()[0], 3);
+    assert_eq!(out.active_bins(), 1);
+}
+
+#[test]
+fn coord_one_align_unmapped_goes_to_last_bin() {
+    let dir = tmp_dir("unmapped-last-bin");
+    let mut out = BamOutput::new(0, &dir, /* n_bins */ 10, /* chunk_bytes */ 1 << 16).unwrap();
+    out.coord_one_align(star_bam::bam_sort_record::UNMAPPED_SENTINEL, star_bam::bam_sort_record::UNMAPPED_SENTINEL, 99, fake_bam_bytes(40)).unwrap();
+    // unmapped always lands in last bin (n_bins - 1 = 9), regardless of coord_bins state
+    assert_eq!(out.bin_total_n()[9], 1);
+    assert_eq!(out.bin_total_n()[0], 0);
+}
