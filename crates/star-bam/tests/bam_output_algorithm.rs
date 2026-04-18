@@ -200,6 +200,7 @@ fn sort_mapped_bin_sorts_by_coord_then_iread() {
     assert_eq!(iread_order, vec![0, 1, 2, 3]);
 }
 
+use star_bam::bam_sort_feed::feed_sam_into_bam_output;
 use star_bam::bam_sort_unmapped::merge_unmapped_bin;
 
 #[test]
@@ -232,4 +233,28 @@ fn merge_unmapped_bin_orders_by_iread_across_threads() {
         order.push(rec.i_read);
     }
     assert_eq!(order, vec![1, 2, 3, 4, 5]);
+}
+
+#[test]
+fn feed_sam_into_bam_output_assigns_monotonic_iread() {
+    // Hand-build a tiny SAM with header + 3 records: one mapped to ref 0,
+    // one mapped to ref 0 at a later pos, one unmapped.
+    let sam = "\
+@HD\tVN:1.6\tSO:unsorted\n\
+@SQ\tSN:chr1\tLN:1000\n\
+r1\t0\tchr1\t10\t30\t10M\t*\t0\t0\tAAAAAAAAAA\tIIIIIIIIII\n\
+r2\t0\tchr1\t50\t30\t10M\t*\t0\t0\tCCCCCCCCCC\tIIIIIIIIII\n\
+r3\t4\t*\t0\t0\t*\t*\t0\t0\tGGGGGGGGGG\tIIIIIIIIII\n";
+    let dir = tmp_dir("feed-sam");
+    let sam_path = dir.join("in.sam");
+    std::fs::write(&sam_path, sam).unwrap();
+
+    let mut out = BamOutput::new(0, &dir.join("bamtmp"), 4, 1 << 16).unwrap();
+    feed_sam_into_bam_output(&sam_path, &mut out).unwrap();
+    out.coord_flush().unwrap();
+
+    // 2 mapped (bins 0..2) + 1 unmapped (bin 3); iReads 0,1,2 assigned.
+    let counts = out.bin_total_n();
+    assert_eq!(counts.iter().sum::<u64>(), 3);
+    assert_eq!(counts[3], 1, "unmapped lands in last bin");
 }
