@@ -268,8 +268,6 @@ pub struct Parameters {
     pub limit_out_sam_one_read_bytes: u64,
     pub limit_out_sj_collapsed: u64,
     pub limit_out_sj_one_read: u64,
-    pub limit_ba_msort_ram: u64,
-    pub limit_ba_msort_bytes: u64,
     pub limit_n_re_ad_ssj: u64,
 
     // ---- M3 alignment-time parameters (Parameters.{h,cpp}) ----
@@ -315,6 +313,29 @@ pub struct Parameters {
     pub out_bam_coord: bool,
     /// `--outBAMcompression` (1..9 or -1..=9 per STAR's conventions).
     pub out_bam_compression: i32,
+    /// `--outBAMsortingBinsN` (STAR `outBAMcoordNbins`). Default 50.
+    pub out_bam_coord_nbins: u32,
+    /// `--outBAMsortingThreadN`. 0 = auto (use `run_thread_n`). Typed
+    /// `i32` (not `u32`) to match STAR's `int outBAMsortingThreadN` in
+    /// `Parameters.h:188` — lets a user-supplied negative value produce
+    /// a `ParseIntError` we can surface as a STAR-style parameter
+    /// error, rather than an opaque `u32::parse` failure.
+    pub out_bam_sorting_thread_n: i32,
+    /// `--limitBAMsortRAM` in bytes. 0 = "use all available".
+    pub limit_bam_sort_ram: u64,
+    /// Runtime-populated genomic bin boundaries (length = `out_bam_coord_nbins`).
+    /// Packed `(ref_id << 32) | pos`. Element 0 is always 0 once coord_bins
+    /// runs. Populated by `BamOutput::coord_bins`.
+    pub out_bam_sorting_bin_start: Vec<u64>,
+    /// Directory for per-bin temp files during phase-2a sort (derived
+    /// from `--outTmpDir`). Default: `"<outFileNamePrefix>_STARtmp/BAMsort"`.
+    pub out_bam_sort_tmp_dir: String,
+    /// Per-thread BAM chunk buffer budget (bytes). Phase-2a uses a fixed
+    /// 16 MiB; differs from STAR's runtime-derived default (~50 MB from
+    /// `limitIObufferSize[1]`; see `Parameters.cpp` — function
+    /// `inOutAdjust` / `chunkOutBAMsizeBytes`). A later milestone may
+    /// replace this with the runtime derivation.
+    pub chunk_out_bam_size_bytes: u64,
     pub out_sam_mode: String,
     pub out_sam_strand_field: String,
     pub out_sam_attributes: Vec<String>,
@@ -688,8 +709,6 @@ impl Default for Parameters {
             limit_out_sam_one_read_bytes: 100_000,
             limit_out_sj_collapsed: 1_000_000,
             limit_out_sj_one_read: 1_000,
-            limit_ba_msort_ram: 0,
-            limit_ba_msort_bytes: 0,
             limit_n_re_ad_ssj: 10_000_000,
 
             // Alignment / window defaults mirror parametersDefault.
@@ -727,6 +746,12 @@ impl Default for Parameters {
             out_bam_unsorted: false,
             out_bam_coord: false,
             out_bam_compression: 1,
+            out_bam_coord_nbins: 50,
+            out_bam_sorting_thread_n: 0,
+            limit_bam_sort_ram: 0,
+            out_bam_sorting_bin_start: Vec::new(),
+            out_bam_sort_tmp_dir: String::new(),
+            chunk_out_bam_size_bytes: 16 * 1024 * 1024,
             out_sam_mode: "Full".to_string(),
             out_sam_strand_field: "None".to_string(),
             out_sam_attributes: vec!["Standard".to_string()],
@@ -1245,6 +1270,15 @@ impl Parameters {
 
             "outSAMtype" => self.out_sam_type = values.to_vec(),
             "outBAMcompression" => self.out_bam_compression = single()?.parse()?,
+            "outBAMsortingThreadN" => {
+                self.out_bam_sorting_thread_n = single()?.parse()?;
+            }
+            "outBAMsortingBinsN" => {
+                self.out_bam_coord_nbins = single()?.parse()?;
+            }
+            "limitBAMsortRAM" => {
+                self.limit_bam_sort_ram = single()?.parse()?;
+            }
             "outSAMmode" => self.out_sam_mode = single()?.to_string(),
             "outSAMstrandField" => self.out_sam_strand_field = single()?.to_string(),
             "outSAMattributes" => self.out_sam_attributes = values.to_vec(),
@@ -1379,5 +1413,26 @@ mod tests {
             vec!["gene_type", "gene_biotype"]
         );
         assert_eq!(p.sjdb_insert.out_dir, "/tmp/gd");
+    }
+
+    #[test]
+    fn cli_parses_bam_sort_flags() {
+        let args: Vec<String> = [
+            "STAR",
+            "--runMode", "alignReads",
+            "--genomeDir", "/tmp/gd",
+            "--readFilesIn", "/tmp/r.fq",
+            "--outBAMsortingThreadN", "6",
+            "--outBAMsortingBinsN", "40",
+            "--limitBAMsortRAM", "2000000000",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        let mut p = Parameters::new();
+        p.parse_cli(&args).unwrap();
+        assert_eq!(p.out_bam_sorting_thread_n, 6);
+        assert_eq!(p.out_bam_coord_nbins, 40);
+        assert_eq!(p.limit_bam_sort_ram, 2_000_000_000);
     }
 }
