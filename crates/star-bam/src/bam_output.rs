@@ -30,9 +30,10 @@ pub struct BamOutput {
     /// Number of bins currently active. Starts at 1, jumps to
     /// `n_bins_total` after the first `coord_bins` call.
     pub n_bins_active: u32,
-    /// Per-bin in-memory buffers (only used for mapped bins 0..n-2; bin
-    /// n-1 and unmapped records currently bypass in-memory buffering
-    /// for simplicity — they stream directly to their file writer).
+    /// Per-bin in-memory buffer of encoded `TmpRecord`s. Each bin has
+    /// one buffer, sized to `bin_capacity` (or `bin_capacity_single`
+    /// while `n_bins_active == 1`). Flushed to the matching
+    /// `bin_writers[ib]` when it would overflow.
     bin_buffers: Vec<Vec<u8>>,
     /// Per-bin file writers (one file per bin in this thread's dir).
     bin_writers: Vec<BufWriter<File>>,
@@ -178,9 +179,64 @@ impl BamOutput {
         Ok(())
     }
 
-    /// Declared here so compile succeeds; fully implemented in Task 4.
+    /// Port of `BAMoutput::coordBins`.
+    ///
+    /// Called once, after enough records have been observed in bin 0 to
+    /// estimate genomic boundaries. Reads the single-bin cache, extracts
+    /// packed coords, sorts them, picks evenly-spaced rank cuts, stores
+    /// them in `self.bin_starts`, then replays every cached record
+    /// through `coord_one_align` so they land in their real bins.
+    ///
+    /// STAR reference: `BAMoutput.cpp:118-166`.
     pub fn coord_bins(&mut self) -> Result<()> {
-        // TASK 4 replaces this body.
+        if self.n_bins_active != 1 {
+            return Ok(()); // already done (STAR's mutex-guarded re-entry guard)
+        }
+        self.n_bins_active = self.n_bins_total;
+
+        // Extract coords from cache and compute boundaries.
+        let mut coords: Vec<u64> = self
+            .single_bin_cache
+            .iter()
+            .map(|r| pack_coord(r.ref_id, r.pos))
+            .collect();
+        coords.sort_unstable();
+
+        // STAR: `outBAMsortingBinStart[0] = 0;
+        //        for ib in 1..(nBins-1):
+        //            start[ib] = coords[ binTotalN[0] / (nBins-1) * ib ];`
+        let mapped_bins = (self.n_bins_total - 1) as usize;
+        let n = coords.len();
+        let mut starts = vec![0u64; mapped_bins];
+        for ib in 1..mapped_bins {
+            let rank = n.saturating_mul(ib) / mapped_bins;
+            let rank = rank.min(n.saturating_sub(1));
+            starts[ib] = if n == 0 { 0 } else { coords[rank] };
+        }
+        self.bin_starts = starts;
+
+        // Drain cache + per-bin totals for bin 0 (we're about to rewrite
+        // them) and truncate bin 0's on-disk file: records that were
+        // already spilled during the single-bin phase would double-count
+        // otherwise. The in-memory buffer for bin 0 was where cached
+        // records lived, so reset it too.
+        let cached = std::mem::take(&mut self.single_bin_cache);
+        self.bin_buffers[0].clear();
+        self.bin_total_n[0] = 0;
+        self.bin_total_bytes[0] = 0;
+        // truncate bin-0 file to 0 bytes:
+        self.bin_writers[0].flush()?;
+        let path = self.bin_dir.join("0");
+        {
+            let f = File::create(&path)
+                .with_context(|| format!("truncate {}", path.display()))?;
+            self.bin_writers[0] = BufWriter::with_capacity(1 << 16, f);
+        }
+
+        // Redistribute every cached record.
+        for rec in cached {
+            self.coord_one_align(rec.ref_id, rec.pos, rec.i_read, rec.bam_bytes)?;
+        }
         Ok(())
     }
 

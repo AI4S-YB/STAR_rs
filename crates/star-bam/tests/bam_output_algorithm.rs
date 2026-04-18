@@ -99,3 +99,36 @@ fn coord_one_align_unmapped_goes_to_last_bin() {
     assert_eq!(out.bin_total_n()[9], 1);
     assert_eq!(out.bin_total_n()[0], 0);
 }
+
+#[test]
+fn coord_bins_splits_evenly_by_rank() {
+    let dir = tmp_dir("coord-bins-even");
+    // n_bins = 5 → 4 mapped bins + 1 unmapped bin.
+    let mut out = BamOutput::new(0, &dir, 5, 1 << 16).unwrap();
+    // Feed 8 mapped records across ref_id=1, positions 1000,2000,3000...8000.
+    for i in 0..8u64 {
+        out.coord_one_align(1, 1000 + 1000 * i as u32, i, fake_bam_bytes(32)).unwrap();
+    }
+    assert_eq!(out.active_bins(), 1);
+    out.coord_bins().unwrap();
+    assert_eq!(out.active_bins(), 5);
+    // After coord_bins, bin 0 is the lowest-coord quarter (positions 1000,2000),
+    // bin 1 is the next quarter, etc. Each of bins 0..=3 should now hold 2 records.
+    let counts = out.bin_total_n();
+    assert_eq!(counts[0..4].iter().sum::<u64>(), 8);
+    // bin 4 is unmapped; no unmapped inputs → 0.
+    assert_eq!(counts[4], 0);
+}
+
+#[test]
+fn coord_bins_idempotent_after_first_call() {
+    let dir = tmp_dir("coord-bins-idempotent");
+    let mut out = BamOutput::new(0, &dir, 4, 1 << 16).unwrap();
+    for i in 0..4u64 {
+        out.coord_one_align(1, 100 * i as u32 + 100, i, fake_bam_bytes(24)).unwrap();
+    }
+    out.coord_bins().unwrap();
+    let snapshot: Vec<u64> = out.bin_total_n().to_vec();
+    out.coord_bins().unwrap();
+    assert_eq!(out.bin_total_n(), snapshot.as_slice());
+}
