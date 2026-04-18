@@ -132,3 +132,25 @@ fn coord_bins_idempotent_after_first_call() {
     out.coord_bins().unwrap();
     assert_eq!(out.bin_total_n(), snapshot.as_slice());
 }
+
+#[test]
+fn coord_flush_without_explicit_coord_bins_still_distributes() {
+    // STAR's coordFlush auto-calls coordBins if we're still in the
+    // single-bin state — verify we do the same.
+    let dir = tmp_dir("coord-flush-auto");
+    let mut out = BamOutput::new(0, &dir, 4, 1 << 16).unwrap();
+    for i in 0..6u64 {
+        out.coord_one_align(1, 100 * (i as u32) + 10, i, fake_bam_bytes(32)).unwrap();
+    }
+    assert_eq!(out.active_bins(), 1);
+    out.coord_flush().unwrap();
+    assert_eq!(out.active_bins(), 4);
+    let counts = out.bin_total_n();
+    // mapped bins sum to 6; unmapped bin empty.
+    assert_eq!(counts[0..3].iter().sum::<u64>(), 6);
+    assert_eq!(counts[3], 0);
+    // Per-thread bin files should exist and bin 0 should be non-empty.
+    let bin0 = dir.join("0").join("0");
+    let md = std::fs::metadata(&bin0).unwrap();
+    assert!(md.len() > 0, "bin 0 should have been written to disk");
+}

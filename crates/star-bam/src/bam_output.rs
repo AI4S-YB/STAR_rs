@@ -240,8 +240,13 @@ impl BamOutput {
         Ok(())
     }
 
-    /// Declared here so compile succeeds; fully implemented in Task 5.
+    /// Port of `BAMoutput::coordFlush`. If we never left the single-bin
+    /// state, run `coord_bins` first so records are distributed before
+    /// the final flush.
     pub fn coord_flush(&mut self) -> Result<()> {
+        if self.n_bins_active == 1 {
+            self.coord_bins()?;
+        }
         for ib in 0..self.n_bins_total as usize {
             self.flush_bin_buffer(ib)?;
             self.bin_writers[ib].flush()?;
