@@ -18,6 +18,7 @@ pub mod bam_functions;
 pub mod bam_output;
 pub mod bam_remove_dups;
 pub mod bam_sort_coord;
+pub mod bam_sort_record;
 pub mod sam_headers;
 pub mod sam_output;
 pub mod sam_to_bam;
