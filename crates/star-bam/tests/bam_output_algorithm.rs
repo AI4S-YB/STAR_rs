@@ -154,3 +154,48 @@ fn coord_flush_without_explicit_coord_bins_still_distributes() {
     let md = std::fs::metadata(&bin0).unwrap();
     assert!(md.len() > 0, "bin 0 should have been written to disk");
 }
+
+use star_bam::bam_sort_bin::sort_mapped_bin;
+use std::fs::File;
+use std::io::BufReader;
+
+fn write_tmp_bin_file(path: &std::path::Path, recs: &[star_bam::bam_sort_record::TmpRecord]) {
+    let mut f = std::io::BufWriter::new(std::fs::File::create(path).unwrap());
+    for r in recs {
+        star_bam::bam_sort_record::write_tmp_record(&mut f, r).unwrap();
+    }
+}
+
+#[test]
+fn sort_mapped_bin_sorts_by_coord_then_iread() {
+    let root = tmp_dir("sort-mapped-bin");
+    // Two threads, one bin (ibin=0).
+    for t in 0..2u32 {
+        std::fs::create_dir_all(root.join(t.to_string())).unwrap();
+    }
+    use star_bam::bam_sort_record::TmpRecord;
+    let bam = |n: usize| fake_bam_bytes(n);
+    write_tmp_bin_file(&root.join("0").join("0"), &[
+        TmpRecord { ref_id: 1, pos: 300, i_read: 3, bam_bytes: bam(20) },
+        TmpRecord { ref_id: 1, pos: 100, i_read: 1, bam_bytes: bam(20) },
+    ]);
+    write_tmp_bin_file(&root.join("1").join("0"), &[
+        TmpRecord { ref_id: 1, pos: 200, i_read: 2, bam_bytes: bam(20) },
+        TmpRecord { ref_id: 1, pos: 100, i_read: 0, bam_bytes: bam(20) },
+    ]);
+
+    let bin_n = 4u64;
+    let bin_s = 4 * (24 + 24); // 4 records × (24 header + 24 payload incl prefix)
+    sort_mapped_bin(0, bin_n, bin_s as u64, 2, &root).unwrap();
+
+    // Read back the sorted output file and check i_read order.
+    let out_path = root.join("bin_0000_sorted.rbr");
+    let f = File::open(&out_path).unwrap();
+    let mut r = BufReader::new(f);
+    let mut iread_order = Vec::new();
+    while let Some(rec) = read_tmp_record(&mut r).unwrap() {
+        iread_order.push(rec.i_read);
+    }
+    // Coord 100 ties (iread 0, 1), then 200 (iread 2), then 300 (iread 3).
+    assert_eq!(iread_order, vec![0, 1, 2, 3]);
+}
