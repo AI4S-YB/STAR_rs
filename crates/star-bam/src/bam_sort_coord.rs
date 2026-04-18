@@ -52,6 +52,14 @@ pub fn check_sort_ram_limit(
 ) -> Result<u64> {
     // STAR formula: per-bin mem = bytes + 24 * n (the 24 matches the
     // BAMoutput tmp-record header size; close enough for our Rust codec).
+    //
+    // Caveat: phase-2a `sort_mapped_bin` holds the loaded bin bytes AND
+    // a parallel `Vec<TmpRecord>` (with cloned bam_bytes) during the
+    // sort, so real peak is ~2 * bytes + 24 * n. We under-report here —
+    // intentional: mirrors STAR's estimate and keeps `--limitBAMsortRAM`
+    // ergonomics consistent with the C++ side. Phase 2b should either
+    // tighten this estimate or eliminate the double buffer by sorting
+    // indices into the original flat byte buffer.
     let mapped = per_bin_n.len().saturating_sub(1);
     let mut peak = 0u64;
     for ib in 0..mapped {

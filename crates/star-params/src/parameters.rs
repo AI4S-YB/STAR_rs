@@ -315,7 +315,11 @@ pub struct Parameters {
     pub out_bam_compression: i32,
     /// `--outBAMsortingBinsN` (STAR `outBAMcoordNbins`). Default 50.
     pub out_bam_coord_nbins: u32,
-    /// `--outBAMsortingThreadN`. 0 = auto (use `run_thread_n`).
+    /// `--outBAMsortingThreadN`. 0 = auto (use `run_thread_n`). Typed
+    /// `i32` (not `u32`) to match STAR's `int outBAMsortingThreadN` in
+    /// `Parameters.h:188` — lets a user-supplied negative value produce
+    /// a `ParseIntError` we can surface as a STAR-style parameter
+    /// error, rather than an opaque `u32::parse` failure.
     pub out_bam_sorting_thread_n: i32,
     /// `--limitBAMsortRAM` in bytes. 0 = "use all available".
     pub limit_bam_sort_ram: u64,
