@@ -235,6 +235,8 @@ fn merge_unmapped_bin_orders_by_iread_across_threads() {
     assert_eq!(order, vec![1, 2, 3, 4, 5]);
 }
 
+use noodles_bam;
+
 #[test]
 fn feed_sam_into_bam_output_assigns_monotonic_iread() {
     // Hand-build a tiny SAM with header + 3 records: one mapped to ref 0,
@@ -257,4 +259,53 @@ r3\t4\t*\t0\t0\t*\t*\t0\t0\tGGGGGGGGGG\tIIIIIIIIII\n";
     let counts = out.bin_total_n();
     assert_eq!(counts.iter().sum::<u64>(), 3);
     assert_eq!(counts[3], 1, "unmapped lands in last bin");
+}
+
+use star_bam::bam_sort_coord::sort_bam_by_coordinate;
+
+#[test]
+fn sort_bam_by_coordinate_end_to_end_tiny() {
+    // Full pipeline: one thread, one BamOutput, feed via coord_one_align,
+    // run sort, check final BAM exists and contains the right # of records.
+    let dir = tmp_dir("sort-bam-e2e");
+    let tmp_root = dir.join("bamsort");
+    std::fs::create_dir_all(&tmp_root).unwrap();
+    // Minimal SAM header for the output BAM.
+    let sam_hdr = "@HD\tVN:1.6\tSO:unsorted\n@SQ\tSN:chr1\tLN:1000\n";
+
+    let mut out = BamOutput::new(0, &tmp_root, 4, 1 << 16).unwrap();
+    // 3 mapped (coord ascending already) + 1 unmapped.
+    let sam = "\
+@HD\tVN:1.6\tSO:unsorted\n\
+@SQ\tSN:chr1\tLN:1000\n\
+r1\t0\tchr1\t10\t30\t10M\t*\t0\t0\tAAAAAAAAAA\tIIIIIIIIII\n\
+r2\t0\tchr1\t50\t30\t10M\t*\t0\t0\tCCCCCCCCCC\tIIIIIIIIII\n\
+r3\t0\tchr1\t30\t30\t10M\t*\t0\t0\tGGGGGGGGGG\tIIIIIIIIII\n\
+r4\t4\t*\t0\t0\t*\t*\t0\t0\tTTTTTTTTTT\tIIIIIIIIII\n";
+    let sam_path = dir.join("in.sam");
+    std::fs::write(&sam_path, sam).unwrap();
+    feed_sam_into_bam_output(&sam_path, &mut out).unwrap();
+    out.coord_flush().unwrap();
+
+    let final_bam = dir.join("Aligned.sortedByCoord.out.bam");
+    sort_bam_by_coordinate(
+        &tmp_root,
+        /* n_threads */ 1,
+        /* n_bins_total */ 4,
+        &[out.bin_total_n().to_vec()],
+        &[out.bin_total_bytes().to_vec()],
+        sam_hdr.as_bytes(),
+        &final_bam,
+        /* compression */ Some(1),
+        /* limit_bam_sort_ram */ 0, // 0 = no limit in phase-2a
+    )
+    .unwrap();
+
+    assert!(final_bam.exists());
+    // Open final BAM and count records.
+    let f = std::fs::File::open(&final_bam).unwrap();
+    let mut r = noodles_bam::io::Reader::new(f);
+    let _hdr = r.read_header().unwrap();
+    let n: usize = r.records().count();
+    assert_eq!(n, 4, "final BAM should contain all 4 records");
 }

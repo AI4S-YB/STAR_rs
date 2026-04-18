@@ -9,11 +9,16 @@ description = "STAR BAM output (via noodles)"
 [dependencies]
 anyhow.workspace = true
 thiserror.workspace = true
+bstr = "1"
 noodles-bgzf = { workspace = true, features = ["libdeflate"] }
 noodles-bam = { workspace = true }
 noodles-sam = { workspace = true }
+rayon = { workspace = true }
 star-core.workspace = true
 star-params.workspace = true
+
+[dev-dependencies]
+noodles-bam = { workspace = true }
 
 [lints]
 workspace = true
