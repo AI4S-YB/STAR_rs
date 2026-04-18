@@ -27,15 +27,73 @@ of M7 and must be closed before M8 starts.
 ### T2. `--outSAMtype BAM SortedByCoordinate`
 
 - Current: falls back to Unsorted if requested.
-- Work:
-  - Port `BAMbinSortByCoordinate.cpp` + `BAMbinSortUnmapped.cpp`
-    (per-bin parallel sort, external merge).
-  - Port `--outBAMsortingThreadN`, `--outBAMsortingBinsN`,
-    `--limitBAMsortRAM`.
-  - Port `bamSortByCoordinate()` chunk wiring in `ReadAlign_stitchPieces`
-    and `BAMoutput_coordUnmapped`.
-  - Acceptance: byte-exact `Aligned.sortedByCoord.out.bam` +
-    `Aligned.sortedByCoord.out.bam.bai` (if `--outBAMindex` requested).
+- Strategy: two phases — **algorithm parity first, byte-exact parity
+  second**. Phase 2a ships a sort pipeline that clones STAR's algorithm
+  1:1 but writes the final BAM through `noodles-bam`; phase 2b swaps
+  the writer once T1 lands and thereby earns byte-exact output.
+
+**Phase 2a — algorithm clone + semantic match (this cycle)**
+
+- Port the STAR sort pipeline 1:1 at the algorithm level:
+  - `BAMoutput::coordOneAlign` — per-record bin decision, unmapped to
+    the last bin, attach `iRead`, maintain `binTotalN` / `binTotalBytes`.
+  - `BAMoutput::coordBins` — first-batch boundary estimation
+    (`outBAMsortingBinStart`), then redistribute cached records into
+    real bins.
+  - `BAMbinSortByCoordinate` — sort key
+    `(coordinate, iRead, record_offset)`.
+  - `BAMbinSortUnmapped` — multi-way merge of per-thread unmapped bin
+    files by `iRead`.
+  - `bamSortByCoordinate` top-level wiring: bin-size aggregation,
+    `--limitBAMsortRAM` check, per-bin parallelism, final bin-order
+    concatenation.
+- I/O layer: `noodles-bam` writer (not STAR's hand-rolled encoder + BGZF).
+  Temp per-bin files use a Rust-native layout
+  (`ref_id / pos / i_read / record_bytes`) chosen for debug ergonomics;
+  format is fixed for the whole phase, no mid-phase swap.
+- `iRead` semantics: stable-within-thread only. Global-ordinal alignment
+  with C++ STAR is deferred to phase 2c.
+- Phase-2a input source is the existing SAM intermediate, avoiding any
+  coupling to T1's native BAM encoder work.
+- Honor `--outBAMsortingThreadN`, `--outBAMsortingBinsN`,
+  `--limitBAMsortRAM`, plus the `ReadAlign_stitchPieces` /
+  `BAMoutput_coordUnmapped` chunk wiring.
+- Module layout in `crates/star-bam/`:
+  - `bam_output.rs` — `coord_one_align`, `coord_bins`, `coord_flush`.
+  - `bam_sort_bin.rs` — `sort_mapped_bin`.
+  - `bam_sort_unmapped.rs` — `merge_unmapped_bin`.
+  - `bam_sort_coord.rs` — `sort_bam_by_coordinate`,
+    `collect_bin_stats`, `check_sort_ram_limit`, `merge_sorted_bins`.
+  - `bam_sort_record.rs` — `BinRecordMeta { coord, i_read, file_offset }`.
+- Acceptance (phase 2a): compare `samtools view
+  Aligned.sortedByCoord.out.bam` against C++ STAR, split by flag 0x4:
+  - Mapped (`-F 4`): within each `(ref, pos)` bucket, sort by `qname`
+    on both sides and `diff`. Tests the bin/sort algorithm without
+    coupling to `iRead`.
+  - Unmapped (`-f 4`): `sort | diff` as a multiset. Verifies
+    completeness without coupling to `iRead` ordering.
+- Unit tests target the algorithm functions directly with hand-built
+  records:
+  - `coord_bins_matches_cpp_fixture`
+  - `mapped_bin_sort_key_matches_cpp`
+  - `unmapped_merge_matches_cpp_read_order`
+
+**Phase 2b — byte-exact (gated on T1)**
+
+- Once T1 ships a byte-exact `BAM Unsorted` path (ported `alignBAM` +
+  BGZF), swap the phase-2a `noodles-bam` writer for the ported encoder.
+  The sort algorithm is unchanged; only the leaf writer moves.
+- Acceptance upgrades to `cmp` on `Aligned.sortedByCoord.out.bam`
+  (+ `.bai` when `--outBAMindex` is set). This is the acceptance that
+  feeds M8 exit criteria #1–#3.
+
+**Phase 2c — optional `iRead` strict alignment**
+
+- If byte-identical unmapped ordering is desired before phase 2b (e.g.
+  for tighter semantic diffs during debugging), port STAR's `iRead`
+  assignment timing — a global ordinal issued inside `alignBAM` before
+  `coordOneAlign` — into the Rust path. Gated on need; not a phase-2a
+  blocker.
 
 ### T3. `--quantMode TranscriptomeSAM` (+ BAM variant)
 
@@ -77,8 +135,10 @@ of M7 and must be closed before M8 starts.
 
 ### Exit criteria for M7-parked -> M8
 
-1. T1, T2, T3, T4, T5 all have at least one byte-exact fixture in
-   `tests/e2e.sh`.
+1. T1, T2 (phase 2b), T3, T4, T5 all have at least one byte-exact
+   fixture in `tests/e2e.sh`. T2 phase 2a has a separate
+   semantic-match fixture (mapped-`diff` + unmapped-multiset) that is
+   kept green in parallel until phase 2b supersedes it.
 2. Full `tests/e2e.sh` green (current 33 cases + new ones).
 3. No use of `std::io::sink()` for mapping output when any BAM/wig flag
    is set (i.e. all output paths are real files, verified by test).
