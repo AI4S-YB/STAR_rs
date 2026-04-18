@@ -213,11 +213,7 @@ impl Stats {
             self.read_n,
             w1 = w1
         )?;
-        let avg_len = if self.read_n > 0 {
-            self.read_bases / self.read_n
-        } else {
-            0
-        };
+        let avg_len = self.read_bases.checked_div(self.read_n).unwrap_or(0);
         writeln!(
             out,
             "{:>w1$}{}",
