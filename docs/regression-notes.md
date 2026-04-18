@@ -225,3 +225,22 @@ So on this fixture the current port is:
 | 7 | `crates/star-params/src/parameters.rs` | `scoreStitchSJshift` default 200 -> 1. |
 | 8 | `crates/star-sjdb/src/output_sj.rs` | Two-stage `outSJfilter*` pipeline. |
 | 9 | `crates/star-sjdb/src/output_sj.rs` | `outSJfilterIntronMaxVsReadN` default fixed. |
+
+## BAM SortedByCoordinate — phase 2a
+
+Implemented 2026-04-18. Acceptance is **semantic match via `samtools view`**,
+not byte-exact: mapped records are diffed within-`(ref, pos)` sorted by
+`qname`; unmapped records are diffed as a multiset. `iRead` is assigned
+as a per-pass monotonic counter (not globally aligned with C++ STAR's
+ordinal). The final BAM writer is `noodles-bam`, not the ported
+`alignBAM` encoder; byte-exact acceptance waits on T1 / phase 2b.
+
+Verified on `tests/fixtures/tiny/` at `runThreadN=1` and `runThreadN=4`
+in `tests/e2e.sh` `[9]`. The sort pipeline itself is single-threaded at
+the feeder layer (one `BamOutput`); per-bin sort and unmapped merge are
+parallel via rayon. `--outBAMsortingBinsN`, `--outBAMsortingThreadN`,
+and `--limitBAMsortRAM` are parsed; the first is honored in full, the
+other two are parsed-but-not-threaded in phase 2a (single feeder +
+rayon-wide parallelism at the bin level). Phase-2a temp layout is a
+Rust-native codec (`bam_sort_record::TmpRecord`) — phase 2b will swap to
+STAR's native layout alongside T1.
