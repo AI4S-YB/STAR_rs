@@ -35,16 +35,42 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
     fs::create_dir_all(&dir)
         .with_context(|| format!("--genomeDir: could not create {}", dir.display()))?;
 
+    let has_sjdb_file = p
+        .p_ge
+        .sjdb_file_chr_start_end
+        .first()
+        .map(String::as_str)
+        .is_some_and(|s| s != "-");
+    let has_sjdb_gtf = p.p_ge.sjdb_gtf_file != "-";
+    if p.p_ge.sjdb_overhang == 0 && (has_sjdb_file || has_sjdb_gtf) {
+        anyhow::bail!(
+            "EXITING because of FATAL INPUT PARAMETER ERROR: for generating genome with annotations (--sjdbFileChrStartEnd or --sjdbGTFfile options)\n\
+             you need to specify >0 --sjdbOverhang\n\
+             SOLUTION: re-run genome generation specifying non-zero --sjdbOverhang, which ideally should be equal to OneMateLength-1, or could be chosen generically as ~100"
+        );
+    }
+    if !has_sjdb_file && !has_sjdb_gtf && p.sjdb_overhang_user_set && p.p_ge.sjdb_overhang > 0 {
+        anyhow::bail!(
+            "EXITING because of FATAL INPUT PARAMETER ERROR: when generating genome without annotations (--sjdbFileChrStartEnd or --sjdbGTFfile options)\n\
+             do not specify >0 --sjdbOverhang\n\
+             SOLUTION: re-run genome generation without --sjdbOverhang option"
+        );
+    }
+
     let mut genome = Genome::new();
     genome.genome_chr_bin_nbases = 1u64 << p.p_ge.g_chr_bin_nbits;
     genome.sjdb_overhang = p.p_ge.sjdb_overhang;
+    genome.sjdb_length = if genome.sjdb_overhang == 0 {
+        0
+    } else {
+        2 * genome.sjdb_overhang + 1
+    };
 
     // Port of Genome_genomeGenerate.cpp:120-129: force sjdbOverhang=0 when no
     // sjdb source provided.
-    if p.p_ge.sjdb_file_chr_start_end.first().map(String::as_str) == Some("-")
-        && p.p_ge.sjdb_gtf_file == "-"
-    {
+    if !has_sjdb_file && !has_sjdb_gtf {
         genome.sjdb_overhang = 0;
+        genome.sjdb_length = 0;
         p.p_ge.sjdb_overhang = 0;
     }
 
@@ -115,15 +141,7 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
     genome.n_sa = n_sa;
 
     // GstrandBit = floor(log2(nGenome + limit*sjdbLength))+1, clamped to ≥32.
-    let sj_len = if genome.sjdb_length == 0 {
-        // At this stage sjdbLength is unknown; the C++ uses it for GstrandBit
-        // reservation only. Default to 0 for genomes without sjdb so downstream
-        // masks are deterministic; sjdb path (M5) will re-initialize.
-        0
-    } else {
-        genome.sjdb_length
-    };
-    let span = genome.n_genome as f64 + p.limit_sjdb_insert_nsj as f64 * sj_len as f64;
+    let span = genome.n_genome as f64 + p.limit_sjdb_insert_nsj as f64 * genome.sjdb_length as f64;
     let mut g_strand_bit = (span.ln() / std::f64::consts::LN_2).floor() as i64 + 1;
     if g_strand_bit < 32 {
         g_strand_bit = 32;

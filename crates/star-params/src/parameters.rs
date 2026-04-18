@@ -1092,6 +1092,8 @@ impl Parameters {
                     self.sjdb_insert.out_dir
                 )
             })?;
+        } else if self.run_mode == "genomeGenerate" && self.sjdb_insert.yes {
+            self.sjdb_insert.out_dir = self.p_ge.g_dir.clone();
         }
         Ok(())
     }
@@ -1131,6 +1133,12 @@ impl Parameters {
             }
             "sjdbGTFtagExonParentGene" => {
                 self.p_ge.sjdb_gtf_tag_exon_parent_gene = single()?.to_string()
+            }
+            "sjdbGTFtagExonParentGeneName" => {
+                self.p_ge.sjdb_gtf_tag_exon_parent_gene_name = values.to_vec()
+            }
+            "sjdbGTFtagExonParentGeneType" => {
+                self.p_ge.sjdb_gtf_tag_exon_parent_gene_type = values.to_vec()
             }
             "sjdbOverhang" => {
                 self.p_ge.sjdb_overhang = single()?.parse()?;
@@ -1334,5 +1342,42 @@ mod tests {
         assert_eq!(p.p_ge.g_fasta_files, vec!["/tmp/a.fa", "/tmp/b.fa"]);
         assert_eq!(p.p_ge.g_sa_index_nbases, 11);
         assert_eq!(p.run_thread_n, 4);
+    }
+
+    #[test]
+    fn cli_parses_sjdb_gtf_attr_tags() {
+        let args: Vec<String> = [
+            "STAR",
+            "--runMode",
+            "genomeGenerate",
+            "--genomeDir",
+            "/tmp/gd",
+            "--genomeFastaFiles",
+            "/tmp/a.fa",
+            "--sjdbGTFfile",
+            "/tmp/a.gtf",
+            "--sjdbOverhang",
+            "49",
+            "--sjdbGTFtagExonParentGeneName",
+            "gene_name",
+            "Name",
+            "--sjdbGTFtagExonParentGeneType",
+            "gene_type",
+            "gene_biotype",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        let mut p = Parameters::new();
+        p.parse_cli(&args).unwrap();
+        assert_eq!(
+            p.p_ge.sjdb_gtf_tag_exon_parent_gene_name,
+            vec!["gene_name", "Name"]
+        );
+        assert_eq!(
+            p.p_ge.sjdb_gtf_tag_exon_parent_gene_type,
+            vec!["gene_type", "gene_biotype"]
+        );
+        assert_eq!(p.sjdb_insert.out_dir, "/tmp/gd");
     }
 }

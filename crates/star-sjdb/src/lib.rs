@@ -13,6 +13,7 @@
 
 pub mod binary_search2;
 pub mod build_index;
+pub mod gtf;
 pub mod insert_junctions;
 pub mod loader;
 pub mod out_sj;
@@ -21,4 +22,5 @@ pub mod prepare;
 pub mod sjdb_class;
 pub mod twopass;
 
+pub use gtf::Gtf;
 pub use sjdb_class::SjdbLoci;

@@ -4,6 +4,7 @@
 //! parameter parsing are ported. Subsequent milestones flesh out the branches.
 
 use std::io::Write;
+use std::path::Path;
 use std::process::ExitCode;
 
 use star_params::parameters::{compilation_time_place, star_version};
@@ -61,7 +62,7 @@ fn main() -> ExitCode {
     p.command_line_full = args[..].join(" ");
 
     match p.run_mode.as_str() {
-        "genomeGenerate" => match star_genome::genome_generate(&mut p) {
+        "genomeGenerate" => match run_genome_generate(&mut p) {
             Ok(_) => ExitCode::from(0),
             Err(e) => {
                 eprintln!("EXITING because of FATAL ERROR in genomeGenerate: {e:#}");
@@ -80,6 +81,42 @@ fn main() -> ExitCode {
             ExitCode::from(101)
         }
     }
+}
+
+fn run_genome_generate(p: &mut star_params::parameters::Parameters) -> anyhow::Result<()> {
+    let mut genome = star_genome::genome_generate(p)?;
+    if p.sjdb_insert.yes {
+        p.sjdb_insert.out_dir = p.p_ge.g_dir.clone();
+        if genome.chr_bin.is_empty() {
+            genome.chr_bin_fill();
+        }
+
+        let mut sjdb_loci = star_sjdb::SjdbLoci::new();
+        let mut gtf = star_sjdb::Gtf::new(&mut genome, p, &p.p_ge.g_dir, &mut sjdb_loci)?;
+        gtf.transcript_gene_sj(&genome, p, &p.p_ge.g_dir, &mut sjdb_loci)?;
+        sjdb_loci.load_from_files(&p.p_ge.sjdb_file_chr_start_end)?;
+
+        let genome1 = genome.clone();
+        star_sjdb::insert_junctions::sjdb_insert_junctions(
+            p,
+            &mut genome,
+            &genome1,
+            &mut sjdb_loci,
+        )?;
+
+        p.p_ge.g_file_sizes = vec![genome.n_genome, genome.n_sa_byte];
+        let dir = Path::new(&p.p_ge.g_dir);
+        star_genome::io::write_genome_sequence(dir, &genome)?;
+        star_genome::io::write_sa(dir, &genome.sa)?;
+        star_genome::io::write_sai(
+            dir,
+            p.p_ge.g_sa_index_nbases,
+            &genome.genome_sa_index_start,
+            &genome.sai,
+        )?;
+        star_genome::io::genome_parameters_write(&dir.join("genomeParameters.txt"), p, &genome)?;
+    }
+    Ok(())
 }
 
 /// Top-level for `--runMode alignReads`. Implements the STAR.cpp

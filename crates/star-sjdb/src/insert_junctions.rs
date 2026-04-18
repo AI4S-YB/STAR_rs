@@ -11,6 +11,7 @@ use star_genome::genome::Genome;
 use star_params::parameters::Parameters;
 
 use crate::build_index::sjdb_build_index;
+use crate::gtf::Gtf;
 use crate::prepare::sjdb_prepare;
 use crate::sjdb_class::SjdbLoci;
 
@@ -56,7 +57,8 @@ pub fn sjdb_insert_junctions(
         })?;
     } else if p.run_mode != "genomeGenerate" {
         sjdb_loci.load_from_files(&p.p_ge.sjdb_file_chr_start_end)?;
-        // GTF loading is deferred (M5.9 covers external files; GTF is M7 quant).
+        let mut gtf = Gtf::new(map_gen, p, &p.sjdb_insert.out_dir, sjdb_loci)?;
+        gtf.transcript_gene_sj(map_gen, p, &p.sjdb_insert.out_dir, sjdb_loci)?;
     }
 
     // 3. Prepare the merged sjdb and build new junction sequences.

@@ -230,7 +230,7 @@ pub fn sjdb_build_index(
                     map_gen
                         .sai
                         .write_packed(ii, ind_array[i_sj][0] - 1 + i_sj as u64 + 1);
-                    for ii0 in (ind0 + 1)..ii {
+                    for ii0 in ind0.wrapping_add(1)..ii {
                         map_gen.sai.write_packed(
                             ii0,
                             (ind_array[i_sj][0] - 1 + i_sj as u64 + 1)
@@ -255,7 +255,7 @@ pub fn sjdb_build_index(
                     i_sj += 1;
                 }
                 map_gen.sai.write_packed(ii, i_sa1 + i_sj as u64);
-                for ii0 in (ind0 + 1)..ii {
+                for ii0 in ind0.wrapping_add(1)..ii {
                     map_gen
                         .sai
                         .write_packed(ii0, (i_sa2 + i_sj as u64) | map_gen.sai_mark_absent_mask_c);
