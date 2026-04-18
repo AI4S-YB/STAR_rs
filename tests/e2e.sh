@@ -247,6 +247,30 @@ cmp_bam_body() {
   rm -f "$ta" "$tb"
 }
 
+cmp_sorted_bam_body() {
+  # Phase-2a acceptance: mapped records compared with within-coord qname
+  # sort (algorithm parity without iRead coupling); unmapped records
+  # compared as a multiset (sort | diff).
+  local label="$1" a="$2" b="$3"
+  if ! command -v samtools >/dev/null 2>&1; then
+    echo "  SKIP $label (samtools not available)"
+    return 0
+  fi
+  local am bm au bu
+  am="$(mktemp)"; bm="$(mktemp)"; au="$(mktemp)"; bu="$(mktemp)"
+  # Mapped: stable within-coord-bucket order by qname.
+  samtools view -F 4 "$a" | awk 'BEGIN{FS=OFS="\t"} {print $3"_"$4, $1, $0}' | sort -k1,1 -k2,2 | cut -f3- > "$am"
+  samtools view -F 4 "$b" | awk 'BEGIN{FS=OFS="\t"} {print $3"_"$4, $1, $0}' | sort -k1,1 -k2,2 | cut -f3- > "$bm"
+  # Unmapped: multiset.
+  samtools view -f 4 "$a" | sort > "$au"
+  samtools view -f 4 "$b" | sort > "$bu"
+  local ok=1
+  if ! cmp -s "$am" "$bm"; then ok=0; echo "  DIFF mapped:"; diff "$am" "$bm" | head -8; fi
+  if ! cmp -s "$au" "$bu"; then ok=0; echo "  DIFF unmapped:"; diff "$au" "$bu" | head -8; fi
+  if [ "$ok" -eq 1 ]; then pass "$label"; else fail "$label"; fi
+  rm -f "$am" "$bm" "$au" "$bu"
+}
+
 R="$SCRATCH/bam_rs/"; C="$SCRATCH/bam_ref/"; mkdir -p "$R" "$C"
 "$STAR_REF" --runMode alignReads --runThreadN 1 \
   --genomeDir "$GEN_REF" --readFilesIn "$FIX/tiny/reads.fq" \
@@ -270,6 +294,35 @@ R4="$SCRATCH/bam_rs4/"; C4="$SCRATCH/bam_ref4/"; mkdir -p "$R4" "$C4"
   --outSAMtype BAM Unsorted \
   --outFileNamePrefix "$R4" >/dev/null 2>&1
 cmp_bam_body "bam-mt/Aligned.out.bam (body)" "$R4/Aligned.out.bam" "$C4/Aligned.out.bam"
+
+# ---------------------------------------------------------------------------
+# --outSAMtype BAM SortedByCoordinate (phase 2a semantic match)
+# ---------------------------------------------------------------------------
+echo
+echo "[9] alignReads --outSAMtype BAM SortedByCoordinate (phase 2a)"
+R9="$SCRATCH/bamsort_rs/"; C9="$SCRATCH/bamsort_ref/"; mkdir -p "$R9" "$C9"
+"$STAR_REF" --runMode alignReads --runThreadN 1 \
+  --genomeDir "$GEN_REF" --readFilesIn "$FIX/tiny/reads.fq" \
+  --outSAMtype BAM SortedByCoordinate \
+  --outFileNamePrefix "$C9" >/dev/null 2>&1
+"$STAR_RS"  --runMode alignReads --runThreadN 1 \
+  --genomeDir "$GEN_REF" --readFilesIn "$FIX/tiny/reads.fq" \
+  --outSAMtype BAM SortedByCoordinate \
+  --outFileNamePrefix "$R9" >/dev/null 2>&1
+cmp_sorted_bam_body "bamsort/Aligned.sortedByCoord.out.bam (semantic)" \
+  "$R9/Aligned.sortedByCoord.out.bam" "$C9/Aligned.sortedByCoord.out.bam"
+
+R9m="$SCRATCH/bamsort_rs4/"; C9m="$SCRATCH/bamsort_ref4/"; mkdir -p "$R9m" "$C9m"
+"$STAR_REF" --runMode alignReads --runThreadN 4 \
+  --genomeDir "$GEN_REF" --readFilesIn "$FIX/tiny/reads.fq" \
+  --outSAMtype BAM SortedByCoordinate \
+  --outFileNamePrefix "$C9m" >/dev/null 2>&1
+"$STAR_RS"  --runMode alignReads --runThreadN 4 \
+  --genomeDir "$GEN_REF" --readFilesIn "$FIX/tiny/reads.fq" \
+  --outSAMtype BAM SortedByCoordinate \
+  --outFileNamePrefix "$R9m" >/dev/null 2>&1
+cmp_sorted_bam_body "bamsort-mt/Aligned.sortedByCoord.out.bam (semantic)" \
+  "$R9m/Aligned.sortedByCoord.out.bam" "$C9m/Aligned.sortedByCoord.out.bam"
 
 echo
 if [ "$FAIL" -eq 0 ]; then
