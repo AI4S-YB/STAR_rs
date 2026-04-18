@@ -96,5 +96,6 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.create-release.outputs.tag }}
         run: gh release edit "$TAG" --draft=false
