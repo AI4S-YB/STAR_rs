@@ -268,8 +268,6 @@ pub struct Parameters {
     pub limit_out_sam_one_read_bytes: u64,
     pub limit_out_sj_collapsed: u64,
     pub limit_out_sj_one_read: u64,
-    pub limit_ba_msort_ram: u64,
-    pub limit_ba_msort_bytes: u64,
     pub limit_n_re_ad_ssj: u64,
 
     // ---- M3 alignment-time parameters (Parameters.{h,cpp}) ----
@@ -318,7 +316,7 @@ pub struct Parameters {
     /// `--outBAMsortingBinsN` (STAR `outBAMcoordNbins`). Default 50.
     pub out_bam_coord_nbins: u32,
     /// `--outBAMsortingThreadN`. 0 = auto (use `run_thread_n`).
-    pub out_bam_sorting_thread_n: u32,
+    pub out_bam_sorting_thread_n: i32,
     /// `--limitBAMsortRAM` in bytes. 0 = "use all available".
     pub limit_bam_sort_ram: u64,
     /// Runtime-populated genomic bin boundaries (length = `out_bam_coord_nbins`).
@@ -328,7 +326,11 @@ pub struct Parameters {
     /// Directory for per-bin temp files during phase-2a sort (derived
     /// from `--outTmpDir`). Default: `"<outFileNamePrefix>_STARtmp/BAMsort"`.
     pub out_bam_sort_tmp_dir: String,
-    /// Per-thread BAM chunk buffer budget (bytes). Default 16 MiB.
+    /// Per-thread BAM chunk buffer budget (bytes). Phase-2a uses a fixed
+    /// 16 MiB; differs from STAR's runtime-derived default (~50 MB from
+    /// `limitIObufferSize[1]`; see `Parameters.cpp` — function
+    /// `inOutAdjust` / `chunkOutBAMsizeBytes`). A later milestone may
+    /// replace this with the runtime derivation.
     pub chunk_out_bam_size_bytes: u64,
     pub out_sam_mode: String,
     pub out_sam_strand_field: String,
@@ -703,8 +705,6 @@ impl Default for Parameters {
             limit_out_sam_one_read_bytes: 100_000,
             limit_out_sj_collapsed: 1_000_000,
             limit_out_sj_one_read: 1_000,
-            limit_ba_msort_ram: 0,
-            limit_ba_msort_bytes: 0,
             limit_n_re_ad_ssj: 10_000_000,
 
             // Alignment / window defaults mirror parametersDefault.
