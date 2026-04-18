@@ -199,3 +199,37 @@ fn sort_mapped_bin_sorts_by_coord_then_iread() {
     // Coord 100 ties (iread 0, 1), then 200 (iread 2), then 300 (iread 3).
     assert_eq!(iread_order, vec![0, 1, 2, 3]);
 }
+
+use star_bam::bam_sort_unmapped::merge_unmapped_bin;
+
+#[test]
+fn merge_unmapped_bin_orders_by_iread_across_threads() {
+    let root = tmp_dir("merge-unmapped");
+    // Two threads, unmapped bin index = 3 (n_bins_total = 4).
+    use star_bam::bam_sort_record::{TmpRecord, UNMAPPED_SENTINEL};
+    for t in 0..2u32 {
+        std::fs::create_dir_all(root.join(t.to_string())).unwrap();
+    }
+    // Per-thread inputs are already in ascending iRead order (what
+    // coord_flush gives us because records are fed in input order).
+    write_tmp_bin_file(&root.join("0").join("3"), &[
+        TmpRecord { ref_id: UNMAPPED_SENTINEL, pos: UNMAPPED_SENTINEL, i_read: 2, bam_bytes: fake_bam_bytes(16) },
+        TmpRecord { ref_id: UNMAPPED_SENTINEL, pos: UNMAPPED_SENTINEL, i_read: 5, bam_bytes: fake_bam_bytes(16) },
+    ]);
+    write_tmp_bin_file(&root.join("1").join("3"), &[
+        TmpRecord { ref_id: UNMAPPED_SENTINEL, pos: UNMAPPED_SENTINEL, i_read: 1, bam_bytes: fake_bam_bytes(16) },
+        TmpRecord { ref_id: UNMAPPED_SENTINEL, pos: UNMAPPED_SENTINEL, i_read: 3, bam_bytes: fake_bam_bytes(16) },
+        TmpRecord { ref_id: UNMAPPED_SENTINEL, pos: UNMAPPED_SENTINEL, i_read: 4, bam_bytes: fake_bam_bytes(16) },
+    ]);
+
+    merge_unmapped_bin(3, 2, &root).unwrap();
+
+    let out_path = root.join("bin_0003_sorted.rbr");
+    let f = std::fs::File::open(&out_path).unwrap();
+    let mut r = std::io::BufReader::new(f);
+    let mut order = Vec::new();
+    while let Some(rec) = star_bam::bam_sort_record::read_tmp_record(&mut r).unwrap() {
+        order.push(rec.i_read);
+    }
+    assert_eq!(order, vec![1, 2, 3, 4, 5]);
+}

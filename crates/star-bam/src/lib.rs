@@ -20,6 +20,7 @@ pub mod bam_remove_dups;
 pub mod bam_sort_bin;
 pub mod bam_sort_coord;
 pub mod bam_sort_record;
+pub mod bam_sort_unmapped;
 pub mod sam_headers;
 pub mod sam_output;
 pub mod sam_to_bam;
