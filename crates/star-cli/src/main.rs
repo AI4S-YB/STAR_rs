@@ -256,11 +256,13 @@ fn run_mapping_pass(
     let bam_path = format!("{out_prefix}Aligned.out.bam");
     // Decide whether to keep the SAM on disk (`--outSAMtype SAM` or nothing
     // set — default), or to transiently produce SAM and then
-    // convert to BAM (`--outSAMtype BAM Unsorted`). `SortedByCoordinate`
-    // is not yet implemented — we currently fall back to Unsorted for
-    // any BAM request.
+    // convert/sort to BAM (`--outSAMtype BAM Unsorted` or
+    // `--outSAMtype BAM SortedByCoordinate`). Phase-2a always goes via
+    // the SAM intermediate.
     let want_sam = emit_sam && (p.out_sam_bool || (!p.out_bam_unsorted && !p.out_bam_coord));
-    let want_bam = emit_sam && (p.out_bam_unsorted || p.out_bam_coord);
+    let want_bam_unsorted = emit_sam && p.out_bam_unsorted;
+    let want_bam_coord = emit_sam && p.out_bam_coord;
+    let want_bam = want_bam_unsorted || want_bam_coord;
     // When only BAM is requested, we still write SAM to a scratch path
     // (`<prefix>Aligned.out.sam.tmp`) as the intermediate, then convert
     // to BAM at the end and delete the intermediate.
@@ -394,7 +396,7 @@ fn run_mapping_pass(
     // M7.4 (minimum viable): if user requested BAM, convert the SAM
     // intermediate into Aligned.out.bam via noodles. Byte-exactness with
     // C++ STAR's custom alignBAM encoder is not guaranteed yet.
-    if want_bam {
+    if want_bam_unsorted {
         let compression_level = Some(p.out_bam_compression.clamp(0, 9) as u32);
         star_bam::sam_to_bam::convert_sam_file_to_bam(
             std::path::Path::new(&sam_scratch_path),
@@ -402,6 +404,53 @@ fn run_mapping_pass(
             compression_level,
         )?;
         let _ = std::fs::remove_file(&sam_scratch_path);
+    } else if want_bam_coord {
+        let compression_level = Some(p.out_bam_compression.clamp(0, 9) as u32);
+        let sorted_bam_path = format!("{out_prefix}Aligned.sortedByCoord.out.bam");
+        let tmp_root = if p.out_bam_sort_tmp_dir.is_empty() {
+            format!("{out_prefix}_STARtmp_BAMsort")
+        } else {
+            p.out_bam_sort_tmp_dir.clone()
+        };
+        std::fs::create_dir_all(&tmp_root)?;
+
+        // Build a per-pass BamOutput, feed the SAM intermediate
+        // through it, run the sort, clean up.
+        let n_bins = p.out_bam_coord_nbins.max(2);
+        let mut bam_out = star_bam::bam_output::BamOutput::new(
+            0,
+            std::path::Path::new(&tmp_root),
+            n_bins,
+            p.chunk_out_bam_size_bytes,
+        )?;
+        star_bam::bam_sort_feed::feed_sam_into_bam_output(
+            std::path::Path::new(&sam_scratch_path),
+            &mut bam_out,
+        )?;
+        bam_out.coord_flush()?;
+
+        // Extract the SAM header bytes to hand to the final writer.
+        let sam_header_bytes = std::fs::read(&sam_scratch_path)?;
+        let mut hdr_end = 0usize;
+        for line in sam_header_bytes.split_inclusive(|&b| b == b'\n') {
+            if !line.starts_with(b"@") { break; }
+            hdr_end += line.len();
+        }
+        let sam_header = &sam_header_bytes[..hdr_end];
+
+        star_bam::bam_sort_coord::sort_bam_by_coordinate(
+            std::path::Path::new(&tmp_root),
+            /* n_threads */ 1,
+            n_bins,
+            &[bam_out.bin_total_n().to_vec()],
+            &[bam_out.bin_total_bytes().to_vec()],
+            sam_header,
+            std::path::Path::new(&sorted_bam_path),
+            compression_level,
+            p.limit_bam_sort_ram,
+        )?;
+        let _ = std::fs::remove_file(&sam_scratch_path);
+        let _ = std::fs::remove_dir_all(&tmp_root);
     }
 
     if chim_enabled {
