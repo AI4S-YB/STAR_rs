@@ -233,13 +233,16 @@ M8 runs in three tiers. Each tier must be green before the next runs.
 - Blocks M8-tier3 (the gzipped MP-S1 reads).
 
 **T7. `--sjdbGTFfile` in `--runMode genomeGenerate`**
-- Current: `genomeGenerate` ignores GTF. Tests that need sjdb must
-  build the index with C++ STAR first (as in `e2e.sh` cases 4, 7).
-- Work: port `SjdbClass::sjdbLoadFromGTF` into `star-sjdb` and wire it
-  into the Rust `genomeGenerate` path so Rust can build the Mp index
-  end-to-end.
-- Not strictly blocking (we can use the C++-built index), but required
-  for "all-Rust" CI.
+- Status: done. Rust `genomeGenerate` now parses `--sjdbGTFfile`,
+  emits `geneInfo.tab` / `transcriptInfo.tab` / `exonInfo.tab` /
+  `exonGeTrInfo.tab` / `sjdbList.fromGTF.out.tab`, and writes a
+  byte-exact sjdb-enhanced `Genome` / `SA` / `SAindex` on the test
+  fixtures used so far.
+- Validation:
+  - `star-rs/tests/fixtures/gctest` — index files and `GeneCounts`
+    outputs are byte-exact vs C++ STAR.
+  - root `tests/chr1.fa + chr1.gtf + reads_10k_{1,2}.fq` — index files
+    and `ReadsPerGene.out.tab` are byte-exact vs C++ STAR.
 
 ### M8 driver layout
 
@@ -658,6 +661,40 @@ content issue, and is tracked separately.
 Mp/chr1 tier-1 matrix re-run after these fixes — still 100 %
 byte-exact, including `Aligned.out.sam` body at t=8 (small enough
 to fit in one C++ chunk). `tests/e2e.sh` (29 assertions) all green.
+
+### Performance snapshot (2026-04-18)
+
+Measured on the checked-in root `tests/` fixture:
+
+- `genomeGenerate`: `chr1.fa + chr1.gtf`, `--runThreadN 4`,
+  `--genomeSAindexNbases 11`, `--sjdbOverhang 149`.
+- `alignReads`: `reads_10k_1.fq + reads_10k_2.fq`, `--runThreadN 4`,
+  `--quantMode GeneCounts`.
+- For `alignReads`, both binaries used the same **C++-built** index to
+  isolate mapper/runtime differences from index-generation differences.
+- `alignReads` content check on this setup:
+  - `Aligned.out.sam` body: byte-exact
+  - `SJ.out.tab`: byte-exact
+  - `ReadsPerGene.out.tab`: byte-exact
+  - `Log.final.out`: stats lines byte-exact after the `mappedReadsU`
+    / `transcriptStats` fix (time/speed lines naturally differ)
+
+`alignReads` was run 3 times and averaged; peak RSS is the
+representative `/usr/bin/time -v` single-run measurement.
+
+| workload | tool | wall | mapping speed | peak RSS |
+| -------- | ---- | ---- | ------------- | -------- |
+| `alignReads` | C++ STAR 2.7.11b | 30.44 s avg (3 runs) | 1.20 M reads/hour | 745.0 MiB |
+| `alignReads` | `star-rs` | **14.98 s avg (3 runs)** | **2.40 M reads/hour** | **494.7 MiB** |
+| `genomeGenerate` | C++ STAR 2.7.11b | **13.10 s** | — | **920.6 MiB** |
+| `genomeGenerate` | `star-rs` | 41.90 s | — | 1128.9 MiB |
+
+So on this fixture the current port is:
+
+- `alignReads`: about **2.03× faster** than C++ and **33.6 % lower**
+  peak RSS.
+- `genomeGenerate`: about **3.20× slower** than C++ and **22.6 % higher**
+  peak RSS.
 
 ### Summary of M8.0 fixes (2026-04-17)
 
