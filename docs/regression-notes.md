@@ -244,3 +244,33 @@ other two are parsed-but-not-threaded in phase 2a (single feeder +
 rayon-wide parallelism at the bin level). Phase-2a temp layout is a
 Rust-native codec (`bam_sort_record::TmpRecord`) — phase 2b will swap to
 STAR's native layout alongside T1.
+
+## Known divergence — unmapped `AS:i:` / `nM:i:` tags (2026-04-18)
+
+Surfaced while validating phase-2a BAM SortedByCoordinate on chr1 with
+`--outSAMunmapped Within`. QNAME + FLAG multisets match C++ exactly;
+mapped records match byte-for-byte within `(ref, pos)` buckets. The
+only remaining diff is on *unmapped* records: C++ emits non-zero
+`AS:i:` / `nM:i:` reflecting the best seed/partial-alignment score
+(e.g. `AS:i:31 nM:i:7`); Rust always emits `AS:i:0 nM:i:0`.
+
+The diff is present in the SAM intermediate file too, so it is an
+aligner-layer issue, not a BAM-sort-pipeline regression. Diagnosis:
+
+- `crates/star-align/src/output_sam.rs:415` constructs a zero-initialized
+  dummy `Transcript` for the unmapped path; lines 117-118 emit
+  `tr_out.max_score` and `tr_out.n_mm` from that dummy.
+- C++ (`ReadAlign_outputAlignments.cpp:253`) passes the best partial
+  transcript (`*trBestSAM`); its `maxScore` is populated during seed
+  stitching (`ReadAlign_stitchWindowSeeds.cpp`) via `maxScoreMate[imate]`.
+- Rust has a `ReadAlign::max_score_mate` field (`read_align.rs:55`) but
+  it is never written during stitching, and there is no analogous
+  `best_nMM_mate`.
+
+Deferred — not a phase-2a regression and unmapped tag values are
+rarely consumed downstream. Fix scope is roughly: add
+`best_nMM_mate: [UInt; 2]` alongside `max_score_mate`, populate both in
+the stitch/score path whenever a transcript is evaluated, and populate
+the dummy `Transcript` in `output_sam.rs:415` from those fields
+(estimate: 3-4 files, ~15 LoC). Parks until unmapped-tag parity is
+required (e.g. for a stricter phase-2b / M8 semantic-diff).
