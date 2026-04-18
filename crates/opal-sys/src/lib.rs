@@ -4,6 +4,7 @@
 //! `opalInitSearchResult`). Callers live in `star-align::clip_cr4` (M3).
 
 #![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
 
 #[cfg(not(opal_stub))]
 mod ffi {
