@@ -113,8 +113,15 @@ pub unsafe fn max_mappable_length_2strands(
             ind_start_end = [a, b];
         } else if i_sa1 == i_sa2 && i_sa1_no_n && i_sa2_good {
             nrep = 1;
-            let (ml, _) =
-                compare_seq_to_genome(map_gen, read, piece_start, piece_length, l_ind, i_sa1, dir_r);
+            let (ml, _) = compare_seq_to_genome(
+                map_gen,
+                read,
+                piece_start,
+                piece_length,
+                l_ind,
+                i_sa1,
+                dir_r,
+            );
             max_l = ml;
             ind_start_end = [i_sa1, i_sa2];
         } else {

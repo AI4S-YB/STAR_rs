@@ -99,7 +99,7 @@ impl ReadAlign {
                         let (_nrep, l, seeds) = max_mappable_length_2strands(
                             map_gen,
                             p,
-                            &[&r_buffers[0], &r_buffers[1]],
+                            &[r_buffers[0], r_buffers[1]],
                             shift,
                             seed_length,
                             i_dir,
@@ -119,11 +119,7 @@ impl ReadAlign {
                             )
                             .ok();
                         }
-                        if i_dir == 0
-                            && istart == 0
-                            && l_mapped == 0
-                            && shift + l == piece_len
-                        {
+                        if i_dir == 0 && istart == 0 && l_mapped == 0 && shift + l == piece_len {
                             flag_dir_map = false;
                         }
                         // C++ does `Lmapped += L;` unconditionally — if L==0 the
@@ -155,7 +151,7 @@ impl ReadAlign {
                         let (_nrep, _l, seeds) = max_mappable_length_2strands(
                             map_gen,
                             p,
-                            &[&r_buffers[0], &r_buffers[1]],
+                            &[r_buffers[0], r_buffers[1]],
                             shift,
                             seed_length,
                             i_dir,

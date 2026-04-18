@@ -14,8 +14,8 @@ use star_align::read_align::ReadAlign;
 use star_align::stitch::blocks_overlap;
 use star_align::transcript::Transcript;
 use star_core::{EX_G, EX_I_FRAG, EX_L, EX_R};
-use star_genome::Genome;
 use star_genome::load::LOAD_L;
+use star_genome::Genome;
 use star_params::parameters::Parameters;
 
 /// Port of `ReadAlign::chimericDetection` (entry point).
@@ -52,11 +52,7 @@ pub fn chimeric_detection(
 ///
 /// Returns true if a chimeric alignment was recorded (trChim[0..1],
 /// chimJ0/J1, chimMotif, chimStr, chimRepeat0/1).
-pub fn chimeric_detection_old(
-    ra: &mut ReadAlign,
-    p: &Parameters,
-    map_gen: &Genome,
-) -> bool {
+pub fn chimeric_detection_old(ra: &mut ReadAlign, p: &Parameters, map_gen: &Genome) -> bool {
     let p_ch = &p.p_ch;
     let read_length0 = ra.read_length[0];
     let read_length1 = ra.read_length.get(1).copied().unwrap_or(0);
@@ -76,8 +72,8 @@ pub fn chimeric_detection_old(
     let tr_best_snapshot: Transcript = ra.tr_all[tr_best_idx][0].clone();
 
     let last_best = tr_best_snapshot.n_exons as usize - 1;
-    let tr_best_cov_end = tr_best_snapshot.exons[last_best][EX_R]
-        + tr_best_snapshot.exons[last_best][EX_L];
+    let tr_best_cov_end =
+        tr_best_snapshot.exons[last_best][EX_R] + tr_best_snapshot.exons[last_best][EX_L];
     if !(p_ch.segment_min > 0
         && tr_best_snapshot.r_length >= p_ch.segment_min
         && (tr_best_cov_end + p_ch.segment_min <= l_read
@@ -95,9 +91,7 @@ pub fn chimeric_detection_old(
     let mut ro_start1 = if tr_best_snapshot.str_ == 0 {
         tr_best_snapshot.exons[0][EX_R]
     } else {
-        l_read
-            - tr_best_snapshot.exons[last_best][EX_R]
-            - tr_best_snapshot.exons[last_best][EX_L]
+        l_read - tr_best_snapshot.exons[last_best][EX_R] - tr_best_snapshot.exons[last_best][EX_L]
     };
     let mut ro_end1 = if tr_best_snapshot.str_ == 0 {
         tr_best_snapshot.exons[last_best][EX_R] + tr_best_snapshot.exons[last_best][EX_L] - 1
@@ -112,15 +106,14 @@ pub fn chimeric_detection_old(
     }
 
     let mut chim_str_best: u64 = 0;
-    let mut chim_str: u64 = if tr_best_snapshot.intron_motifs[1] == 0
-        && tr_best_snapshot.intron_motifs[2] == 0
-    {
-        0
-    } else if (tr_best_snapshot.str_ == 0) == (tr_best_snapshot.intron_motifs[1] > 0) {
-        1
-    } else {
-        2
-    };
+    let mut chim_str: u64 =
+        if tr_best_snapshot.intron_motifs[1] == 0 && tr_best_snapshot.intron_motifs[2] == 0 {
+            0
+        } else if (tr_best_snapshot.str_ == 0) == (tr_best_snapshot.intron_motifs[1] > 0) {
+            1
+        } else {
+            2
+        };
 
     // Index of the chosen trChim[1] in (iW, iWt) — used for the mainSegmentMultNmax==2 check.
     let mut tr_chim1_idx: Option<(usize, usize)> = None;
@@ -197,8 +190,8 @@ pub fn chimeric_detection_old(
                     || ((ro_end1 + p_ch.segment_read_gap_max + 1) >= ro_start2
                         && (ro_end2 + p_ch.segment_read_gap_max + 1) >= ro_start1))
             {
-                let chim_score: i32 = tr_best_snapshot.max_score + cand.max_score
-                    - chim_overlap as i32;
+                let chim_score: i32 =
+                    tr_best_snapshot.max_score + cand.max_score - chim_overlap as i32;
 
                 let overlap1 = if i_wt > 0 && chim_score_best > 0 {
                     if let Some(prev) = &tr_chim1_prev {
@@ -369,23 +362,31 @@ pub fn chimeric_detection_old(
             let b0 = if ra.tr_chim[0].str_ == 0 {
                 map_gen.g[(ra.tr_chim[0].exons[e0][EX_G] + j_r) as usize + LOAD_L]
             } else {
-                let raw = map_gen.g[(ra.tr_chim[0].exons[e0][EX_G]
-                    + ra.tr_chim[0].exons[e0][EX_L]
+                let raw = map_gen.g[(ra.tr_chim[0].exons[e0][EX_G] + ra.tr_chim[0].exons[e0][EX_L]
                     - 1
-                    - j_r) as usize + LOAD_L];
-                if raw < 4 { 3 - raw } else { raw }
+                    - j_r) as usize
+                    + LOAD_L];
+                if raw < 4 {
+                    3 - raw
+                } else {
+                    raw
+                }
             };
             let b1 = if ra.tr_chim[1].str_ == 0 {
-                map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] - ro_start1_in + ro_start0 + j_r)
-                    as usize + LOAD_L]
+                map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] - ro_start1_in + ro_start0 + j_r) as usize
+                    + LOAD_L]
             } else {
-                let raw = map_gen.g[(ra.tr_chim[1].exons[e1][EX_G]
-                    + ra.tr_chim[1].exons[e1][EX_L]
+                let raw = map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] + ra.tr_chim[1].exons[e1][EX_L]
                     - 1
                     + ro_start1_in
                     - ro_start0
-                    - j_r) as usize + LOAD_L];
-                if raw < 4 { 3 - raw } else { raw }
+                    - j_r) as usize
+                    + LOAD_L];
+                if raw < 4 {
+                    3 - raw
+                } else {
+                    raw
+                }
             };
 
             if (p_ch.filter_genomic_n && (b0 > 3 || b1 > 3)) || b_r > 3 {
@@ -399,16 +400,16 @@ pub fn chimeric_detection_old(
                     map_gen.g[(ra.tr_chim[0].exons[e0][EX_G] + j_r + 2) as usize + LOAD_L],
                 )
             } else {
-                let r01 = map_gen.g[(ra.tr_chim[0].exons[e0][EX_G]
-                    + ra.tr_chim[0].exons[e0][EX_L]
+                let r01 = map_gen.g[(ra.tr_chim[0].exons[e0][EX_G] + ra.tr_chim[0].exons[e0][EX_L]
                     - 1
                     - j_r
-                    - 1) as usize + LOAD_L];
-                let r02 = map_gen.g[(ra.tr_chim[0].exons[e0][EX_G]
-                    + ra.tr_chim[0].exons[e0][EX_L]
+                    - 1) as usize
+                    + LOAD_L];
+                let r02 = map_gen.g[(ra.tr_chim[0].exons[e0][EX_G] + ra.tr_chim[0].exons[e0][EX_L]
                     - 1
                     - j_r
-                    - 2) as usize + LOAD_L];
+                    - 2) as usize
+                    + LOAD_L];
                 (
                     if r01 < 4 { 3 - r01 } else { r01 },
                     if r02 < 4 { 3 - r02 } else { r02 },
@@ -416,25 +417,27 @@ pub fn chimeric_detection_old(
             };
             let (b11, b12) = if ra.tr_chim[1].str_ == 0 {
                 (
-                    map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] - ro_start1_in + ro_start0 + j_r
-                        - 1) as usize + LOAD_L],
+                    map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] - ro_start1_in + ro_start0 + j_r - 1)
+                        as usize
+                        + LOAD_L],
                     map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] - ro_start1_in + ro_start0 + j_r)
-                        as usize + LOAD_L],
+                        as usize
+                        + LOAD_L],
                 )
             } else {
-                let r11 = map_gen.g[(ra.tr_chim[1].exons[e1][EX_G]
-                    + ra.tr_chim[1].exons[e1][EX_L]
+                let r11 = map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] + ra.tr_chim[1].exons[e1][EX_L]
                     - 1
                     + ro_start1_in
                     - ro_start0
                     - j_r
-                    + 1) as usize + LOAD_L];
-                let r12 = map_gen.g[(ra.tr_chim[1].exons[e1][EX_G]
-                    + ra.tr_chim[1].exons[e1][EX_L]
+                    + 1) as usize
+                    + LOAD_L];
+                let r12 = map_gen.g[(ra.tr_chim[1].exons[e1][EX_G] + ra.tr_chim[1].exons[e1][EX_L]
                     - 1
                     + ro_start1_in
                     - ro_start0
-                    - j_r) as usize + LOAD_L];
+                    - j_r) as usize
+                    + LOAD_L];
                 (
                     if r11 < 4 { 3 - r11 } else { r11 },
                     if r12 < 4 { 3 - r12 } else { r12 },
@@ -446,10 +449,8 @@ pub fn chimeric_detection_old(
                 if chim_str != 2 {
                     j_motif = 1;
                 }
-            } else if b01 == 1 && b02 == 3 && b11 == 0 && b12 == 1 {
-                if chim_str != 1 {
-                    j_motif = 2;
-                }
+            } else if b01 == 1 && b02 == 3 && b11 == 0 && b12 == 1 && chim_str != 1 {
+                j_motif = 2;
             }
 
             if b_r == b0 && b_r != b1 {
@@ -479,8 +480,7 @@ pub fn chimeric_detection_old(
             let adj = chim_score_best + 1 + p_ch.score_junction_non_gtag;
             chim_score_best = adj;
             if !(chim_score_best >= p_ch.score_min
-                && chim_score_best + p_ch.score_drop_max
-                    >= (read_length0 + read_length1) as i32)
+                && chim_score_best + p_ch.score_drop_max >= (read_length0 + read_length1) as i32)
             {
                 return false;
             }
@@ -518,13 +518,21 @@ pub fn chimeric_detection_old(
                 map_gen.g[(chim_j0 + j_r) as usize + LOAD_L]
             } else {
                 let raw = map_gen.g[(chim_j0 - j_r) as usize + LOAD_L];
-                if raw < 4 { 3 - raw } else { raw }
+                if raw < 4 {
+                    3 - raw
+                } else {
+                    raw
+                }
             };
             let b1 = if ra.tr_chim[1].str_ == 0 {
                 map_gen.g[(chim_j1 + 1 + j_r) as usize + LOAD_L]
             } else {
                 let raw = map_gen.g[(chim_j1 - 1 - j_r) as usize + LOAD_L];
-                if raw < 4 { 3 - raw } else { raw }
+                if raw < 4 {
+                    3 - raw
+                } else {
+                    raw
+                }
             };
             if b0 != b1 {
                 break;
@@ -539,13 +547,21 @@ pub fn chimeric_detection_old(
                 map_gen.g[(chim_j0 - 1 - j_r) as usize + LOAD_L]
             } else {
                 let raw = map_gen.g[(chim_j0 + 1 + j_r) as usize + LOAD_L];
-                if raw < 4 { 3 - raw } else { raw }
+                if raw < 4 {
+                    3 - raw
+                } else {
+                    raw
+                }
             };
             let b1 = if ra.tr_chim[1].str_ == 0 {
                 map_gen.g[(chim_j1 - j_r) as usize + LOAD_L]
             } else {
                 let raw = map_gen.g[(chim_j1 + j_r) as usize + LOAD_L];
-                if raw < 4 { 3 - raw } else { raw }
+                if raw < 4 {
+                    3 - raw
+                } else {
+                    raw
+                }
             };
             if b0 != b1 {
                 break;
@@ -556,8 +572,8 @@ pub fn chimeric_detection_old(
     }
 
     // Final inter-chromosome / intra-chromosome gate.
-    let same_chr_str = ra.tr_chim[0].str_ == ra.tr_chim[1].str_
-        && ra.tr_chim[0].chr == ra.tr_chim[1].chr;
+    let same_chr_str =
+        ra.tr_chim[0].str_ == ra.tr_chim[1].str_ && ra.tr_chim[0].chr == ra.tr_chim[1].chr;
     let gap: u64 = if same_chr_str {
         if ra.tr_chim[0].str_ == 0 {
             chim_j1.saturating_sub(chim_j0) + 1
@@ -639,10 +655,10 @@ pub fn chimeric_detection_old_output(
             .strip_prefix('@')
             .or_else(|| ra.read_name.strip_prefix('>'))
             .unwrap_or(&ra.read_name);
-        let start0 = ra.tr_chim[0].exons[0][EX_G] + 1
-            - map_gen.chr_start[ra.tr_chim[0].chr as usize];
-        let start1 = ra.tr_chim[1].exons[0][EX_G] + 1
-            - map_gen.chr_start[ra.tr_chim[1].chr as usize];
+        let start0 =
+            ra.tr_chim[0].exons[0][EX_G] + 1 - map_gen.chr_start[ra.tr_chim[0].chr as usize];
+        let start1 =
+            ra.tr_chim[1].exons[0][EX_G] + 1 - map_gen.chr_start[ra.tr_chim[1].chr as usize];
         // Clone to avoid borrow conflict with tr_chim.
         let tr0 = ra.tr_chim[0].clone();
         let tr1 = ra.tr_chim[1].clone();

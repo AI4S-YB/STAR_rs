@@ -16,3 +16,6 @@ libc.workspace = true
 default = []
 # Enables COMPILE_FOR_LONG_READS (STARlong) parameter scaling.
 long-reads = []
+
+[lints]
+workspace = true

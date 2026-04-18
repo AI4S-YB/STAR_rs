@@ -6,7 +6,7 @@
 //! - [`bam_output`]        -> `BAMoutput.{h,cpp}`
 //! - [`bam_functions`]     -> `BAMfunctions.{h,cpp}`
 //! - [`bam_sort_coord`]    -> `bamSortByCoordinate.cpp` + `BAMbinSortByCoordinate.cpp`
-//!                          + `BAMbinSortUnmapped.cpp`
+//!   + `BAMbinSortUnmapped.cpp`
 //! - [`bam_cat`]           -> `bam_cat.c`
 //! - [`bam_remove_dups`]   -> `bamRemoveDuplicates.cpp`
 //! - [`signal_from_bam`]   -> `signalFromBAM.cpp`

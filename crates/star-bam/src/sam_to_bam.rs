@@ -34,13 +34,12 @@ pub fn convert_sam_bytes_to_bam(
         .read_header()
         .with_context(|| "parsing SAM header from Rust STAR output")?;
 
-    let file = File::create(bam_path)
-        .with_context(|| format!("creating {}", bam_path.display()))?;
+    let file =
+        File::create(bam_path).with_context(|| format!("creating {}", bam_path.display()))?;
     let writer_inner: Box<dyn Write> = Box::new(BufWriter::new(file));
 
     let bgzf_writer = if let Some(level) = compression {
-        let lvl = bgzf::io::writer::CompressionLevel::try_from(level as u8)
-            .unwrap_or_default();
+        let lvl = bgzf::io::writer::CompressionLevel::try_from(level as u8).unwrap_or_default();
         bgzf::io::writer::Builder::default()
             .set_compression_level(lvl)
             .build_from_writer(writer_inner)

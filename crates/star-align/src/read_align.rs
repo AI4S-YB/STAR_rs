@@ -42,9 +42,9 @@ pub struct ReadAlign {
     pub read_name: String,
     pub read_name_mates: Vec<String>,
     pub read_name_extra: Vec<String>,
-    pub read1: Vec<Vec<u8>>,          // 0/1/2: FWD ASCII / PAD ASCII / RC ASCII
-    pub read0: Vec<Vec<u8>>,          // numeric per mate
-    pub qual0: Vec<Vec<u8>>,          // quality per mate
+    pub read1: Vec<Vec<u8>>, // 0/1/2: FWD ASCII / PAD ASCII / RC ASCII
+    pub read0: Vec<Vec<u8>>, // numeric per mate
+    pub qual0: Vec<Vec<u8>>, // quality per mate
     pub read_length: [u64; MAX_N_MATES],
     pub read_length_original: [u64; MAX_N_MATES],
     pub read_length_pair: u64,

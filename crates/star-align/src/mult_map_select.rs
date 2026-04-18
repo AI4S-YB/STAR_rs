@@ -79,7 +79,7 @@ impl ReadAlign {
         } else {
             let mut nbest: usize = 0;
             let u_sentinel = u64::MAX;
-            let out_sam_mult_nmax_set = (p.out_sam_multi_nmax as i64) != -1;
+            let out_sam_mult_nmax_set = p.out_sam_multi_nmax != -1;
             if p.out_multimapper_order_random || out_sam_mult_nmax_set {
                 let n_tr = self.n_tr as usize;
                 let max_score = self.max_score;

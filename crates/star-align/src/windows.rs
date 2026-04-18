@@ -130,7 +130,7 @@ impl ReadAlign {
             i_win = self.n_w as usize;
             w_b[a_bin] = i_win as u16;
             self.ensure_window_capacity(i_win, p);
-            self.wc[i_win][WC_CHR] = map_gen.chr_bin[a_bin >> p.win_bin_chr_nbits] as u64;
+            self.wc[i_win][WC_CHR] = map_gen.chr_bin[a_bin >> p.win_bin_chr_nbits];
             self.wc[i_win][WC_STR] = a_str;
             self.wc[i_win][WC_G_START] = a_bin as u64;
             self.wc[i_win][WC_G_END] = a_bin as u64;
@@ -181,9 +181,7 @@ impl ReadAlign {
             return;
         }
         let i_w = w_b[bin];
-        if i_w == UINT_WIN_BIN_MAX
-            || (!a_anchor && a_length < self.wa_lrec[i_w as usize])
-        {
+        if i_w == UINT_WIN_BIN_MAX || (!a_anchor && a_length < self.wa_lrec[i_w as usize]) {
             return;
         }
         let i_w = i_w as usize;
@@ -195,8 +193,7 @@ impl ReadAlign {
             if a_frag == wa[WA_I_FRAG]
                 && wa[WA_SJ_A] == sj_a
                 && a1 + wa[WA_R_START] == wa[WA_G_START] + a_rstart
-                && ((a_rstart >= wa[WA_R_START]
-                    && a_rstart < wa[WA_R_START] + wa[WA_LENGTH])
+                && ((a_rstart >= wa[WA_R_START] && a_rstart < wa[WA_R_START] + wa[WA_LENGTH])
                     || (a_rstart + a_length >= wa[WA_R_START]
                         && a_rstart + a_length < wa[WA_R_START] + wa[WA_LENGTH]))
             {
@@ -214,7 +211,6 @@ impl ReadAlign {
                         break;
                     }
                 }
-                let mut i_a0 = i_a0;
                 if i_a0 > i_a {
                     i_a0 -= 1;
                 }

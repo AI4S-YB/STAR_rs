@@ -36,10 +36,7 @@ pub type Mates = Vec<LoadedRead>;
 /// Port of `readChunkFastx` / the FASTX branch of
 /// `ReadAlignChunk_processChunks.cpp` — single-threaded serial read of all
 /// records from the input streams.
-pub fn load_all_reads<R: BufRead>(
-    p: &Parameters,
-    readers: &mut [R],
-) -> anyhow::Result<Vec<Mates>> {
+pub fn load_all_reads<R: BufRead>(p: &Parameters, readers: &mut [R]) -> anyhow::Result<Vec<Mates>> {
     let mut out: Vec<Mates> = Vec::new();
     loop {
         let mut mates: Mates = Vec::with_capacity(readers.len());
@@ -87,13 +84,17 @@ pub fn run_align_multithread<F, QInit, QHook, Q>(
     quant_hook: QHook,
 ) -> anyhow::Result<(u64, Stats, OutSJ, Vec<Vec<u8>>, Vec<Q>)>
 where
-    F: Fn(&Parameters, &Genome, &mut crate::read_align::ReadAlign, &mut Vec<u8>) -> anyhow::Result<()>
+    F: Fn(
+            &Parameters,
+            &Genome,
+            &mut crate::read_align::ReadAlign,
+            &mut Vec<u8>,
+        ) -> anyhow::Result<()>
         + Sync,
     Q: Send,
     QInit: Fn() -> Q + Sync,
-    QHook:
-        Fn(&Parameters, &Genome, &mut crate::read_align::ReadAlign, &mut Q) -> anyhow::Result<()>
-            + Sync,
+    QHook: Fn(&Parameters, &Genome, &mut crate::read_align::ReadAlign, &mut Q) -> anyhow::Result<()>
+        + Sync,
 {
     let n_threads = n_threads.max(1);
     let total = all_reads.len();
@@ -135,7 +136,10 @@ where
             }
             handles
                 .into_iter()
-                .map(|h| h.join().unwrap_or_else(|e| Err(anyhow::anyhow!("worker panic: {e:?}"))))
+                .map(|h| {
+                    h.join()
+                        .unwrap_or_else(|e| Err(anyhow::anyhow!("worker panic: {e:?}")))
+                })
                 .collect()
         });
 
@@ -171,9 +175,15 @@ fn run_one_chunk<F, QInit, QHook, Q>(
     quant_hook: &QHook,
 ) -> anyhow::Result<(u64, Vec<u8>, Vec<u8>, Stats, OutSJ, Q)>
 where
-    F: Fn(&Parameters, &Genome, &mut crate::read_align::ReadAlign, &mut Vec<u8>) -> anyhow::Result<()>,
+    F: Fn(
+        &Parameters,
+        &Genome,
+        &mut crate::read_align::ReadAlign,
+        &mut Vec<u8>,
+    ) -> anyhow::Result<()>,
     QInit: Fn() -> Q,
-    QHook: Fn(&Parameters, &Genome, &mut crate::read_align::ReadAlign, &mut Q) -> anyhow::Result<()>,
+    QHook:
+        Fn(&Parameters, &Genome, &mut crate::read_align::ReadAlign, &mut Q) -> anyhow::Result<()>,
 {
     let mut ra_chunk = ReadAlignChunk::new(
         i_thread,

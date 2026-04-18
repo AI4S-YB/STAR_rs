@@ -165,4 +165,3 @@ impl OutSJ {
         self.junctions = collapsed;
     }
 }
-

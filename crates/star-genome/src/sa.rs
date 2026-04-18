@@ -42,8 +42,8 @@ pub unsafe fn compare_suffixes(
     idx_a: u64,
     idx_b: u64,
 ) -> Ordering {
-    let mut ga = unsafe { global_g.offset(-7).add(idx_a as usize) } as *const u8;
-    let mut gb = unsafe { global_g.offset(-7).add(idx_b as usize) } as *const u8;
+    let mut ga = unsafe { global_g.offset(-7).add(idx_a as usize) };
+    let mut gb = unsafe { global_g.offset(-7).add(idx_b as usize) };
     let mut jj: u64 = 0;
     while jj < global_l {
         let va = unsafe { read_u64_unaligned(ga) };

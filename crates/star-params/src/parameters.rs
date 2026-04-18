@@ -845,7 +845,9 @@ impl Parameters {
         while i < args.len() {
             let key = &args[i];
             if !key.starts_with("--") {
-                anyhow::bail!("EXITING because of fatal PARAMETERS error: unrecognized parameter '{key}'");
+                anyhow::bail!(
+                    "EXITING because of fatal PARAMETERS error: unrecognized parameter '{key}'"
+                );
             }
             let key = &key[2..];
             let mut values = Vec::new();
@@ -873,7 +875,7 @@ impl Parameters {
         // may later reduce it by 1, but we don't support Solo in M4).
         if self.run_mode == "alignReads" && !self.read_files_in.is_empty() {
             let n = self.read_files_in.len() as u32;
-            if n >= 1 && n <= 2 {
+            if (1..=2).contains(&n) {
                 self.read_nends = n;
                 self.read_nmates = n;
             }
@@ -888,7 +890,8 @@ impl Parameters {
         // ParametersChimeric::initialize (M6): validates --chimOutType /
         // --chimFilter and populates derived bools. Must be called AFTER
         // peOverlap is parsed so we can pass `pe_overlap_nbases_min`.
-        self.p_ch.initialize(self.pe_overlap_nbases_min.max(0) as u64)?;
+        self.p_ch
+            .initialize(self.pe_overlap_nbases_min.max(0) as u64)?;
 
         self.finalize_quant()?;
         Ok(())
@@ -1110,15 +1113,15 @@ impl Parameters {
             "genomeDir" => self.p_ge.g_dir = single()?.to_string(),
             "genomeLoad" => self.p_ge.g_load = single()?.to_string(),
             "genomeFastaFiles" => {
-                self.p_ge.g_fasta_files = values.iter().cloned().collect();
+                self.p_ge.g_fasta_files = values.to_vec();
             }
-            "genomeChainFiles" => self.p_ge.g_chain_files = values.iter().cloned().collect(),
+            "genomeChainFiles" => self.p_ge.g_chain_files = values.to_vec(),
             "genomeSAindexNbases" => self.p_ge.g_sa_index_nbases = single()?.parse()?,
             "genomeChrBinNbits" => self.p_ge.g_chr_bin_nbits = single()?.parse()?,
             "genomeSAsparseD" => self.p_ge.g_sa_sparse_d = single()?.parse()?,
             "genomeSuffixLengthMax" => self.p_ge.g_suffix_length_max = single()?.parse()?,
             "sjdbFileChrStartEnd" => {
-                self.p_ge.sjdb_file_chr_start_end = values.iter().cloned().collect();
+                self.p_ge.sjdb_file_chr_start_end = values.to_vec();
             }
             "sjdbGTFfile" => self.p_ge.sjdb_gtf_file = single()?.to_string(),
             "sjdbGTFchrPrefix" => self.p_ge.sjdb_gtf_chr_prefix = single()?.to_string(),
@@ -1146,7 +1149,7 @@ impl Parameters {
             }
 
             // --- M6 chimeric detection (ParametersChimeric) ---
-            "chimOutType" => self.p_ch.out_type = values.iter().cloned().collect(),
+            "chimOutType" => self.p_ch.out_type = values.to_vec(),
             "chimSegmentMin" => {
                 self.p_ch.segment_min = single()?.parse()?;
                 self.p_ch_segment_min = self.p_ch.segment_min;
@@ -1154,50 +1157,34 @@ impl Parameters {
             "chimScoreMin" => self.p_ch.score_min = single()?.parse()?,
             "chimScoreDropMax" => self.p_ch.score_drop_max = single()?.parse()?,
             "chimScoreSeparation" => self.p_ch.score_separation = single()?.parse()?,
-            "chimScoreJunctionNonGTAG" => {
-                self.p_ch.score_junction_non_gtag = single()?.parse()?
-            }
-            "chimJunctionOverhangMin" => {
-                self.p_ch.junction_overhang_min = single()?.parse()?
-            }
+            "chimScoreJunctionNonGTAG" => self.p_ch.score_junction_non_gtag = single()?.parse()?,
+            "chimJunctionOverhangMin" => self.p_ch.junction_overhang_min = single()?.parse()?,
             "chimSegmentReadGapMax" => self.p_ch.segment_read_gap_max = single()?.parse()?,
-            "chimFilter" => {
-                self.p_ch.filter_string_in = values.iter().cloned().collect()
-            }
-            "chimMainSegmentMultNmax" => {
-                self.p_ch.main_segment_mult_nmax = single()?.parse()?
-            }
+            "chimFilter" => self.p_ch.filter_string_in = values.to_vec(),
+            "chimMainSegmentMultNmax" => self.p_ch.main_segment_mult_nmax = single()?.parse()?,
             "chimMultimapNmax" => self.p_ch.multimap_nmax = single()?.parse()?,
-            "chimMultimapScoreRange" => {
-                self.p_ch.multimap_score_range = single()?.parse()?
-            }
-            "chimNonchimScoreDropMin" => {
-                self.p_ch.nonchim_score_drop_min = single()?.parse()?
-            }
+            "chimMultimapScoreRange" => self.p_ch.multimap_score_range = single()?.parse()?,
+            "chimNonchimScoreDropMin" => self.p_ch.nonchim_score_drop_min = single()?.parse()?,
             "chimOutJunctionFormat" => {
-                self.p_ch.out_junction_format = values
-                    .iter()
-                    .filter_map(|s| s.parse().ok())
-                    .collect();
+                self.p_ch.out_junction_format =
+                    values.iter().filter_map(|s| s.parse().ok()).collect();
             }
 
             // --- M7 quantification (ParametersQuant) ---
-            "quantMode" => self.quant.mode = values.iter().cloned().collect(),
+            "quantMode" => self.quant.mode = values.to_vec(),
             "quantTranscriptomeBAMcompression" => {
                 self.quant.tr_sam.bam_compression = single()?.parse()?
             }
-            "quantTranscriptomeSAMoutput" => {
-                self.quant.tr_sam.output = single()?.to_string()
-            }
+            "quantTranscriptomeSAMoutput" => self.quant.tr_sam.output = single()?.to_string(),
             // Accept-and-ignore for M2 (these don't affect genome generation).
             "genomeTransformType" => self.p_ge.transform.ty_string = single()?.to_string(),
             "genomeTransformVCF" => self.p_ge.transform.vcf_file = single()?.to_string(),
             "parametersFiles" | "sysShell" => {
                 // deferred to later milestones
             }
-            "readFilesIn" => self.read_files_in = values.iter().cloned().collect(),
-            "readFilesCommand" => self.read_files_command = values.iter().cloned().collect(),
-            "readFilesType" => self.read_files_type = values.iter().cloned().collect(),
+            "readFilesIn" => self.read_files_in = values.to_vec(),
+            "readFilesCommand" => self.read_files_command = values.to_vec(),
+            "readFilesType" => self.read_files_type = values.to_vec(),
             "readFilesPrefix" => self.read_files_prefix = single()?.to_string(),
             "readMapNumber" => self.read_map_number = single()?.parse()?,
 
@@ -1234,9 +1221,7 @@ impl Parameters {
                 self.align_transcripts_per_read_nmax = single()?.parse()?
             }
             "alignEndsType" => self.align_ends_type.in_ = single()?.to_string(),
-            "alignEndsProtrude" => {
-                self.align_ends_protrude.in_ = values.iter().cloned().collect()
-            }
+            "alignEndsProtrude" => self.align_ends_protrude.in_ = values.to_vec(),
             "alignInsertionFlush" => self.align_insertion_flush.in_ = single()?.to_string(),
             "alignSoftClipAtReferenceEnds" => {
                 self.align_soft_clip_at_reference_ends = single()?.to_string()
@@ -1250,12 +1235,12 @@ impl Parameters {
             }
             "winReadCoverageBasicMin" => self.win_read_coverage_basic_min = single()?.parse()?,
 
-            "outSAMtype" => self.out_sam_type = values.iter().cloned().collect(),
+            "outSAMtype" => self.out_sam_type = values.to_vec(),
             "outBAMcompression" => self.out_bam_compression = single()?.parse()?,
             "outSAMmode" => self.out_sam_mode = single()?.to_string(),
             "outSAMstrandField" => self.out_sam_strand_field = single()?.to_string(),
-            "outSAMattributes" => self.out_sam_attributes = values.iter().cloned().collect(),
-            "outSAMunmapped" => self.out_sam_unmapped = values.iter().cloned().collect::<Vec<_>>().join(" "),
+            "outSAMattributes" => self.out_sam_attributes = values.to_vec(),
+            "outSAMunmapped" => self.out_sam_unmapped = values.to_vec().join(" "),
             "outSAMorder" => self.out_sam_order = single()?.to_string(),
             "outSAMprimaryFlag" => self.out_sam_primary_flag = single()?.to_string(),
             "outSAMreadID" => self.out_sam_read_id = single()?.to_string(),

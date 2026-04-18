@@ -102,7 +102,7 @@ impl ReadAlign {
                         break;
                     }
                     let bin_chr = map_gen.chr_bin[((wb - 1) >> p.win_bin_chr_nbits) as usize];
-                    if bin_chr as u64 != chr {
+                    if bin_chr != chr {
                         break;
                     }
                     wb -= 1;
@@ -118,7 +118,7 @@ impl ReadAlign {
                         break;
                     }
                     let bin_chr = map_gen.chr_bin[((wb + 1) >> p.win_bin_chr_nbits) as usize];
-                    if bin_chr as u64 != chr {
+                    if bin_chr != chr {
                         break;
                     }
                     wb += 1;
@@ -205,9 +205,9 @@ impl ReadAlign {
         if self.tr_all.len() < self.n_w as usize {
             self.tr_all.resize(self.n_w as usize, Vec::new());
         }
-        if self.wa_incl.len() < (self.wa.get(0).map(|v| v.len()).unwrap_or(0)) {
+        if self.wa_incl.len() < (self.wa.first().map(|v| v.len()).unwrap_or(0)) {
             self.wa_incl
-                .resize(self.wa.get(0).map(|v| v.len()).unwrap_or(32), false);
+                .resize(self.wa.first().map(|v| v.len()).unwrap_or(32), false);
         }
 
         let mut tr_best: i32 = 0;

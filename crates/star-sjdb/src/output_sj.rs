@@ -5,7 +5,7 @@
 //! - annotated junctions are always kept
 //! - otherwise count_unique >= filter_min OR (count_unique + count_multiple)
 //!   >= filter_count_total AND both overhangs >= filter_overhang_min.
-//! Distance-to-other-junction filtering is implemented for SAM output.
+//!   > Distance-to-other-junction filtering is implemented for SAM output.
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -81,12 +81,7 @@ pub fn output_sj(
             continue;
         }
         let chr_idx = chr_idx_for_start(chr_start, j.start);
-        OutSJ::write_junction_line(
-            &mut writer,
-            &chr_name[chr_idx],
-            chr_start[chr_idx],
-            j,
-        )?;
+        OutSJ::write_junction_line(&mut writer, &chr_name[chr_idx], chr_start[chr_idx], j)?;
     }
     writer.flush()?;
     Ok(())
@@ -127,13 +122,12 @@ fn compute_filter_flags(junctions: &[Junction], filter: &SjFilter) -> Vec<bool> 
             candidate[ii] = true;
             continue;
         }
-        let bin = ((j.motif as usize + 1) / 2).min(3);
+        let bin = (j.motif as usize).div_ceil(2).min(3);
         let base_pass = (j.count_unique >= filter.count_unique_min[bin]
             || (j.count_multiple + j.count_unique) >= filter.count_total_min[bin])
             && j.overhang_left >= filter.overhang_min[bin]
             && j.overhang_right >= filter.overhang_min[bin]
-            && ((j.count_multiple + j.count_unique) as usize
-                > filter.intron_max_vs_read_n.len()
+            && ((j.count_multiple + j.count_unique) as usize > filter.intron_max_vs_read_n.len()
                 || j.gap as u64
                     <= filter.intron_max_vs_read_n
                         [(j.count_multiple + j.count_unique) as usize - 1]);
@@ -171,7 +165,7 @@ fn compute_filter_flags(junctions: &[Junction], filter: &SjFilter) -> Vec<bool> 
             if junctions[ii].annot > 0 {
                 return true;
             }
-            let bin = ((junctions[ii].motif as usize + 1) / 2).min(3);
+            let bin = (junctions[ii].motif as usize).div_ceil(2).min(3);
             let here = junctions[ii].start;
             let x1 = prev_cand[ii].unwrap_or(0);
             let x2 = next_cand[ii].unwrap_or(u64::MAX);
@@ -209,7 +203,7 @@ fn compute_filter_flags(junctions: &[Junction], filter: &SjFilter) -> Vec<bool> 
             acceptor_pass[ii] = true;
             continue;
         }
-        let bin = ((motif_slot as usize + 1) / 2).min(3);
+        let bin = (motif_slot as usize).div_ceil(2).min(3);
         let x1 = if jj > 0 { acceptor_sorted[jj - 1].0 } else { 0 };
         let x2 = if jj + 1 < acceptor_sorted.len() {
             acceptor_sorted[jj + 1].0

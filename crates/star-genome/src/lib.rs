@@ -14,8 +14,8 @@
 //! Still stubbed (clearly marked): SA sort driver, SAindex, sjdb.
 
 pub mod fasta;
-pub mod genome;
 pub mod generate;
+pub mod genome;
 pub mod io;
 pub mod load;
 pub mod sa;

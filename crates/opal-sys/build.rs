@@ -36,6 +36,12 @@ fn main() {
         .warnings(false);
     build.compile("star_opal");
 
-    println!("cargo:rerun-if-changed={}", opal_dir.join("opal.cpp").display());
-    println!("cargo:rerun-if-changed={}", opal_dir.join("opal.h").display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        opal_dir.join("opal.cpp").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        opal_dir.join("opal.h").display()
+    );
 }

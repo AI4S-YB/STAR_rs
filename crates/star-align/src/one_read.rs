@@ -166,8 +166,8 @@ impl ReadAlign {
         // In our Rust params struct that field is spelled `_nover_rmax`.
         self.out_filter_mismatch_nmax_total = std::cmp::min(
             p.out_filter_mismatch_nmax as u64,
-            (p.out_filter_mismatch_nover_rmax
-                * (self.read_length[0] + self.read_length[1]) as f64) as u64,
+            (p.out_filter_mismatch_nover_rmax * (self.read_length[0] + self.read_length[1]) as f64)
+                as u64,
         );
 
         // Map

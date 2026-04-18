@@ -23,3 +23,6 @@ star-quant.workspace = true
 star-bam.workspace = true
 star-sjdb.workspace = true
 star-stats.workspace = true
+
+[lints]
+workspace = true

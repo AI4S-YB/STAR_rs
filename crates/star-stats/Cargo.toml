@@ -10,3 +10,6 @@ description = "STAR Stats + Log.final.out"
 anyhow.workspace = true
 star-core.workspace = true
 star-params.workspace = true
+
+[lints]
+workspace = true

@@ -252,6 +252,7 @@ pub unsafe fn max_mappable_length(
 ///
 /// Decides how two suffixes that hit a spacer compare relative to the
 /// `gInsert` insertion boundary (used during sjdb insertion).
+#[allow(clippy::if_same_then_else)]
 fn compare_ref_ends(map_gen: &Genome, sa_str: u64, g_insert: u64, str_g: bool, str_r: bool) -> i32 {
     if str_g {
         if str_r {
@@ -385,8 +386,7 @@ pub unsafe fn suffix_array_search1(
 
     while i1 + 1 < i2 {
         let i3 = median_uint2(i1, i2);
-        let (l3, comp_res) =
-            compare_seq_to_genome1(map_gen, sa, s, ss, n, l, i3, str_r, g_insert);
+        let (l3, comp_res) = compare_seq_to_genome1(map_gen, sa, s, ss, n, l, i3, str_r, g_insert);
         if l3 == n {
             return i3;
         }
@@ -439,7 +439,11 @@ pub fn fun_calc_sai(g_seq: &[u8], l: u32) -> i64 {
 /// 2. Secondary: suffix of `Gsj` starting at `iGsj`, with `GENOME_spacingChar`
 ///    acting as an end-of-string marker; identical prefixes up to a
 ///    spacer fall back to comparing `iGsj`.
-pub fn fun_compare_uint_and_suffixes(g_sj: &[u8], a: &[u64; 2], b: &[u64; 2]) -> std::cmp::Ordering {
+pub fn fun_compare_uint_and_suffixes(
+    g_sj: &[u8],
+    a: &[u64; 2],
+    b: &[u64; 2],
+) -> std::cmp::Ordering {
     use std::cmp::Ordering::*;
     match a[0].cmp(&b[0]) {
         Greater => Greater,

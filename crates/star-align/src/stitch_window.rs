@@ -12,9 +12,7 @@ use star_genome::Genome;
 use star_params::parameters::Parameters;
 
 use crate::read_align::{ReadAlign, WinAlign};
-use crate::stitch::{
-    binary_search2, blocks_overlap, extend_align, stitch_align_to_transcript,
-};
+use crate::stitch::{binary_search2, blocks_overlap, extend_align, stitch_align_to_transcript};
 use crate::transcript::Transcript;
 
 /// Snapshot of the host `ReadAlign` state that `stitch_window_aligns` is
@@ -159,19 +157,14 @@ pub unsafe fn stitch_window_aligns(
                     let right_ok = tr_a.exons[isj + 1][EX_L] >= p.align_sjdb_overhang_min
                         || !(isj + 1 == tr_a.n_exons as usize - 1
                             || tr_a.canon_sj[isj + 1] == -3
-                            || (tr_a.sj_annot[isj + 1] == 0
-                                && tr_a.canon_sj[isj + 1] >= 0));
+                            || (tr_a.sj_annot[isj + 1] == 0 && tr_a.canon_sj[isj + 1] >= 0));
                     if !(left_ok && right_ok) {
                         return;
                     }
-                } else {
-                    if tr_a.exons[isj][EX_L]
-                        < p.align_sj_overhang_min + tr_a.shift_sj[isj][0]
-                        || tr_a.exons[isj + 1][EX_L]
-                            < p.align_sj_overhang_min + tr_a.shift_sj[isj][1]
-                    {
-                        return;
-                    }
+                } else if tr_a.exons[isj][EX_L] < p.align_sj_overhang_min + tr_a.shift_sj[isj][0]
+                    || tr_a.exons[isj + 1][EX_L] < p.align_sj_overhang_min + tr_a.shift_sj[isj][1]
+                {
+                    return;
                 }
             }
         }
@@ -238,8 +231,7 @@ pub unsafe fn stitch_window_aligns(
             let mut exl: u64 = 0;
             for iex in 0..tr_a.n_exons as usize {
                 exl += tr_a.exons[iex][EX_L];
-                let last_or_mate_end = iex == tr_a.n_exons as usize - 1
-                    || tr_a.canon_sj[iex] == -3;
+                let last_or_mate_end = iex == tr_a.n_exons as usize - 1 || tr_a.canon_sj[iex] == -3;
                 if last_or_mate_end {
                     // C++ stitchWindowAligns.cpp:159 casts
                     // `(uint)(alignSplicedMateMapLminOverLmate * readLength[...])`
@@ -248,9 +240,7 @@ pub unsafe fn stitch_window_aligns(
                     let lmate = ctx.read_length[tr_a.exons[iex][EX_I_FRAG] as usize];
                     let lmate_frac =
                         (p.align_spliced_mate_map_lmin_over_lmate * lmate as f64) as u64;
-                    if nsj > 0
-                        && (exl < p.align_spliced_mate_map_lmin || exl < lmate_frac)
-                    {
+                    if nsj > 0 && (exl < p.align_spliced_mate_map_lmin || exl < lmate_frac) {
                         return;
                     }
                     exl = 0;
@@ -337,8 +327,8 @@ pub unsafe fn stitch_window_aligns(
 
         if p.score_genomic_length_log2_scale != 0.0 {
             let last = tr_a.n_exons as usize - 1;
-            let glen = (tr_a.exons[last][EX_G] + tr_a.exons[last][EX_L] - tr_a.exons[0][EX_G])
-                as f64;
+            let glen =
+                (tr_a.exons[last][EX_G] + tr_a.exons[last][EX_L] - tr_a.exons[0][EX_G]) as f64;
             score += (glen.log2() * p.score_genomic_length_log2_scale - 0.5).ceil() as i32;
             if score < 0 {
                 score = 0;
@@ -376,9 +366,13 @@ pub unsafe fn stitch_window_aligns(
                     >= ctx.max_score_mate[tr_a.i_frag as usize])
             || p.p_ch_segment_min > 0;
 
-
         if pass {
-            tr_a.mapped_length = tr_a.exons.iter().take(tr_a.n_exons as usize).map(|e| e[EX_L]).sum();
+            tr_a.mapped_length = tr_a
+                .exons
+                .iter()
+                .take(tr_a.n_exons as usize)
+                .map(|e| e[EX_L])
+                .sum();
 
             let mut i_tr = 0usize;
             while i_tr < *n_win_tr as usize {
@@ -400,8 +394,7 @@ pub unsafe fn stitch_window_aligns(
                 let mut pos = 0usize;
                 while pos < *n_win_tr as usize {
                     if score > w_tr[pos].max_score
-                        || (score == w_tr[pos].max_score
-                            && tr_a.g_length < w_tr[pos].g_length)
+                        || (score == w_tr[pos].max_score && tr_a.g_length < w_tr[pos].g_length)
                     {
                         break;
                     }

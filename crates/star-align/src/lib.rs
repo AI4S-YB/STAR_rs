@@ -4,7 +4,7 @@
 //! - `Transcript.{h,cpp}`  -> [`transcript`]
 //! - `ReadAlign.{h,cpp}`   -> [`read_align`]
 //! - `ReadAlignChunk.{h,cpp}` + `ReadAlignChunk_processChunks.cpp` + `ReadAlignChunk_mapChunk.cpp`
-//!    -> [`chunk`]
+//!   -> [`chunk`]
 //! - `mapThreadsSpawn.cpp` -> [`threads`]
 //! - `extendAlign.cpp`, `stitchAlignToTranscript.cpp`, `stitchWindowAligns.cpp`,
 //!   `stitchGapIndel.cpp`, `binarySearch2.cpp`, `blocksOverlap.cpp`

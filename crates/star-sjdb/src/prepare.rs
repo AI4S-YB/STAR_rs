@@ -103,7 +103,7 @@ pub fn sjdb_prepare(
 
         // Repeat length: go back around the junction to find max shift left.
         let mut jj_l: u64 = 0;
-        while jj_l <= s - 1
+        while jj_l < s
             && g_at(s - 1 - jj_l) == g_at(e - jj_l)
             && g_at(s - 1 - jj_l) < 4
             && jj_l < 255
@@ -181,7 +181,8 @@ pub fn sjdb_prepare(
             let new_is_canon = sjdb_motif[isj] > 0;
             let old_is_canon = sjdb_motif[last_idx] > 0;
             let new_wins = (new_is_canon && !old_is_canon)
-                || (new_is_canon == old_is_canon && sjdb_shift_left[isj] < sjdb_shift_left[last_idx]);
+                || (new_is_canon == old_is_canon
+                    && sjdb_shift_left[isj] < sjdb_shift_left[last_idx]);
             if new_wins {
                 *winners.last_mut().unwrap() = isj as u64;
             }

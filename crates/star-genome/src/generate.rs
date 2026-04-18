@@ -123,8 +123,7 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
     } else {
         genome.sjdb_length
     };
-    let span =
-        genome.n_genome as f64 + p.limit_sjdb_insert_nsj as f64 * sj_len as f64;
+    let span = genome.n_genome as f64 + p.limit_sjdb_insert_nsj as f64 * sj_len as f64;
     let mut g_strand_bit = (span.ln() / std::f64::consts::LN_2).floor() as i64 + 1;
     if g_strand_bit < 32 {
         g_strand_bit = 32;
@@ -133,7 +132,9 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
     genome.g_strand_mask = !(1u64 << genome.g_strand_bit);
 
     // Allocate SA PackedArray sized (GstrandBit+1) bits × nSA.
-    genome.sa.define_bits((genome.g_strand_bit + 1) as u32, genome.n_sa);
+    genome
+        .sa
+        .define_bits((genome.g_strand_bit + 1) as u32, genome.n_sa);
     genome.sa.allocate_array();
     genome.n_sa_byte = genome.sa.length_byte;
 
@@ -162,8 +163,7 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
     };
     let n_sa_built = unsafe {
         let g_ptr = genome.g.as_ptr().add(G_OFFSET);
-        sort_suffix_array(g_ptr, &mut genome.sa, &sa_params,
-            genome.g_strand_bit, &dir)?
+        sort_suffix_array(g_ptr, &mut genome.sa, &sa_params, genome.g_strand_bit, &dir)?
     };
     if n_sa_built != genome.n_sa {
         anyhow::bail!(
@@ -195,7 +195,12 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
 
     // Write SA and SAindex files.
     write_sa(&dir, &genome.sa)?;
-    write_sai(&dir, p.p_ge.g_sa_index_nbases, &genome.genome_sa_index_start, &sai)?;
+    write_sai(
+        &dir,
+        p.p_ge.g_sa_index_nbases,
+        &genome.genome_sa_index_start,
+        &sai,
+    )?;
 
     // Stash SAi in genome state (used by alignReads).
     genome.sai = sai;
@@ -209,4 +214,3 @@ pub fn genome_generate(p: &mut Parameters) -> Result<Genome> {
 
     Ok(genome)
 }
-

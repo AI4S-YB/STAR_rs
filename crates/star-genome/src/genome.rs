@@ -18,7 +18,7 @@ pub const G_OFFSET: usize = 200;
 
 /// Mirrors `Genome.h` field layout (omitting Variation / SuperTranscriptome
 /// for milestones ≤ M7).
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Genome {
     /// Full genome sequence (numeric 0..=4) of length `n_genome`. In the C++
     /// code this is a `char*`; we own a `Vec<u8>` and expose slices.
@@ -88,65 +88,6 @@ pub struct Genome {
 
     pub genome_insert_l: u64,
     pub genome_insert_chr_ind_first: u64,
-}
-
-impl Default for Genome {
-    fn default() -> Self {
-        Self {
-            g: Vec::new(),
-            n_g1_alloc: 0,
-            n_genome: 0,
-            sa: PackedArray::default(),
-            sa_insert: PackedArray::default(),
-            sa_pass1: PackedArray::default(),
-            sa_pass2: PackedArray::default(),
-            sai: PackedArray::default(),
-            n_genome_insert: 0,
-            n_genome_pass1: 0,
-            n_genome_pass2: 0,
-            n_sa_insert: 0,
-            n_sa_pass1: 0,
-            n_sa_pass2: 0,
-            chr_start: Vec::new(),
-            chr_length: Vec::new(),
-            chr_length_all: Vec::new(),
-            chr_name: Vec::new(),
-            chr_name_all: Vec::new(),
-            chr_name_index: HashMap::new(),
-            genome_chr_bin_nbases: 0,
-            chr_bin_n: 0,
-            chr_bin: Vec::new(),
-            genome_sa_index_start: Vec::new(),
-            n_sa: 0,
-            n_sa_byte: 0,
-            n_chr_real: 0,
-            n_sai: 0,
-            g_strand_bit: 0,
-            sai_mark_n_bit: 0,
-            sai_mark_absent_bit: 0,
-            g_strand_mask: 0,
-            sai_mark_absent_mask: 0,
-            sai_mark_absent_mask_c: 0,
-            sai_mark_n_mask: 0,
-            sai_mark_n_mask_c: 0,
-            sjdb_overhang: 0,
-            sjdb_length: 0,
-            sj_chr_start: 0,
-            sjdb_n: 0,
-            sj_g_start: 0,
-            sjdb_start: Vec::new(),
-            sjdb_end: Vec::new(),
-            sj_d_start: Vec::new(),
-            sj_a_start: Vec::new(),
-            sj_str: Vec::new(),
-            sjdb_motif: Vec::new(),
-            sjdb_shift_left: Vec::new(),
-            sjdb_shift_right: Vec::new(),
-            sjdb_strand: Vec::new(),
-            genome_insert_l: 0,
-            genome_insert_chr_ind_first: 0,
-        }
-    }
 }
 
 impl Genome {

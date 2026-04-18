@@ -13,7 +13,7 @@
 //! of the structure (transcripts / exons for TranscriptomeSAM) is loaded
 //! conditionally when `--quantMode TranscriptomeSAM` is active.
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -98,10 +98,16 @@ impl Transcriptome {
 /// `geID<TAB>geName<TAB>geBiotype`.
 fn load_gene_info(dir: &Path) -> Result<(u32, Vec<String>, Vec<String>, Vec<String>)> {
     let path = dir.join("geneInfo.tab");
-    let file = File::open(&path)
-        .with_context(|| format!("opening {} (GeneCounts requires --sjdbGTFfile at genomeGenerate)", path.display()))?;
+    let file = File::open(&path).with_context(|| {
+        format!(
+            "opening {} (GeneCounts requires --sjdbGTFfile at genomeGenerate)",
+            path.display()
+        )
+    })?;
     let mut lines = BufReader::new(file).lines();
-    let header = lines.next().ok_or_else(|| anyhow::anyhow!("empty geneInfo.tab"))??;
+    let header = lines
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("empty geneInfo.tab"))??;
     let n_ge: u32 = header
         .trim()
         .parse()
@@ -130,8 +136,7 @@ fn load_gene_info(dir: &Path) -> Result<(u32, Vec<String>, Vec<String>, Vec<Stri
 /// `e_max[i]` is computed as running max of `e[0..=i]`.
 fn load_exon_ge_tr_info(dir: &Path) -> Result<ExG> {
     let path = dir.join("exonGeTrInfo.tab");
-    let file = File::open(&path)
-        .with_context(|| format!("opening {}", path.display()))?;
+    let file = File::open(&path).with_context(|| format!("opening {}", path.display()))?;
     let mut reader = BufReader::new(file);
     let mut header = String::new();
     reader.read_line(&mut header)?;
@@ -154,11 +159,26 @@ fn load_exon_ge_tr_info(dir: &Path) -> Result<ExG> {
             bail!("exonGeTrInfo.tab: unexpected EOF at row {i}");
         }
         let mut it = line.split_whitespace();
-        let s1: u64 = it.next().ok_or_else(|| anyhow::anyhow!("missing s"))?.parse()?;
-        let e1: u64 = it.next().ok_or_else(|| anyhow::anyhow!("missing e"))?.parse()?;
-        let str1: i32 = it.next().ok_or_else(|| anyhow::anyhow!("missing str"))?.parse()?;
-        let g1: u32 = it.next().ok_or_else(|| anyhow::anyhow!("missing g"))?.parse()?;
-        let t1: u32 = it.next().ok_or_else(|| anyhow::anyhow!("missing t"))?.parse()?;
+        let s1: u64 = it
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("missing s"))?
+            .parse()?;
+        let e1: u64 = it
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("missing e"))?
+            .parse()?;
+        let str1: i32 = it
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("missing str"))?
+            .parse()?;
+        let g1: u32 = it
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("missing g"))?
+            .parse()?;
+        let t1: u32 = it
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("missing t"))?
+            .parse()?;
         s.push(s1);
         e.push(e1);
         str_.push(str1 as u8);

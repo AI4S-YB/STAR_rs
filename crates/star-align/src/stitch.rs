@@ -198,8 +198,7 @@ pub unsafe fn extend_align(
             n_match += 1;
             score += SCORE_MATCH as i64;
             if score > tr_a.max_score as i64 {
-                let limit =
-                    (p_mm_max * (l_prev as i64 + i + 1) as f64).min(n_mm_max as f64) as u64;
+                let limit = (p_mm_max * (l_prev as i64 + i + 1) as f64).min(n_mm_max as f64) as u64;
                 if n_mm + n_mm_prev <= limit {
                     tr_a.extend_l = (i + 1) as u64;
                     tr_a.max_score = score as i32;
@@ -469,8 +468,7 @@ pub unsafe fn stitch_align_to_transcript(
                 if map_gen.sjdb_n > 0 {
                     let j_s = (g_aend as i64 + j_r + 1) as u64;
                     let j_e = (g_bstart1 + j_r) as u64;
-                    let sjdb_ind =
-                        binary_search2(j_s, j_e, &map_gen.sjdb_start, &map_gen.sjdb_end);
+                    let sjdb_ind = binary_search2(j_s, j_e, &map_gen.sjdb_start, &map_gen.sjdb_end);
                     if sjdb_ind < 0 {
                         if del_l as u64 >= p.align_intron_min {
                             score += (p.score_gap + j_pen) as i64;
@@ -619,7 +617,8 @@ pub unsafe fn stitch_align_to_transcript(
                 if del_l == 0 && ins_l == 0 {
                     tr_a.exons[nexons - 1][EX_L] += r_bend - r_aend;
                 } else if del_l > 0 {
-                    tr_a.exons[nexons - 1][EX_L] = (tr_a.exons[nexons - 1][EX_L] as i64 + j_r) as u64;
+                    tr_a.exons[nexons - 1][EX_L] =
+                        (tr_a.exons[nexons - 1][EX_L] as i64 + j_r) as u64;
                     tr_a.exons[nexons][EX_L] = (r_bend as i64 - r_aend as i64 - j_r) as u64;
                     tr_a.exons[nexons][EX_R] = (r_aend as i64 + j_r + 1) as u64;
                     tr_a.exons[nexons][EX_G] = (g_bstart1 + j_r + 1) as u64;
@@ -627,7 +626,8 @@ pub unsafe fn stitch_align_to_transcript(
                 } else if ins_l > 0 {
                     tr_a.n_ins += n_ins;
                     tr_a.l_ins += ins_l as u64;
-                    tr_a.exons[nexons - 1][EX_L] = (tr_a.exons[nexons - 1][EX_L] as i64 + j_r) as u64;
+                    tr_a.exons[nexons - 1][EX_L] =
+                        (tr_a.exons[nexons - 1][EX_L] as i64 + j_r) as u64;
                     tr_a.exons[nexons][EX_L] = (r_bend as i64 - r_aend as i64 - j_r - ins_l) as u64;
                     tr_a.exons[nexons][EX_R] = (r_aend as i64 + j_r + ins_l + 1) as u64;
                     tr_a.exons[nexons][EX_G] = g_aend + 1 + j_r as u64;

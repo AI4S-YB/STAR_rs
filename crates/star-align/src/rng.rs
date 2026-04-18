@@ -22,9 +22,8 @@ impl Mt19937 {
         let mut state = [0u32; Self::N];
         state[0] = seed;
         for i in 1..Self::N {
-            state[i] = (1812433253u32
-                .wrapping_mul(state[i - 1] ^ (state[i - 1] >> 30)))
-            .wrapping_add(i as u32);
+            state[i] = (1812433253u32.wrapping_mul(state[i - 1] ^ (state[i - 1] >> 30)))
+                .wrapping_add(i as u32);
         }
         Self {
             state,
@@ -82,7 +81,13 @@ mod tests {
         let v: Vec<u32> = (0..5).map(|_| rng.next_u32()).collect();
         assert_eq!(
             v,
-            vec![655_685_735, 2_776_480_559, 1_298_611_771, 862_112_678, 266_444_375]
+            vec![
+                655_685_735,
+                2_776_480_559,
+                1_298_611_771,
+                862_112_678,
+                266_444_375
+            ]
         );
     }
 }

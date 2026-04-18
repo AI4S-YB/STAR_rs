@@ -61,13 +61,7 @@ pub fn sjdb_insert_junctions(
 
     // 3. Prepare the merged sjdb and build new junction sequences.
     let n_genome_real = map_gen.chr_start[map_gen.n_chr_real as usize];
-    let mut gsj = sjdb_prepare(
-        sjdb_loci,
-        p,
-        n_genome_real,
-        &p.sjdb_insert.out_dir,
-        map_gen,
-    )?;
+    let mut gsj = sjdb_prepare(sjdb_loci, p, n_genome_real, &p.sjdb_insert.out_dir, map_gen)?;
 
     if map_gen.sjdb_n > p.limit_sjdb_insert_nsj {
         anyhow::bail!(

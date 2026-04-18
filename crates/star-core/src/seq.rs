@@ -202,6 +202,7 @@ pub fn nucl_pack_bam(reads_in: &[u8], reads_out: &mut [u8]) {
 /// `convertNuclStrToInt32`: 2-bit encode of string of length <=16.
 /// Returns Ok((int_out, pos_n)) with `pos_n = -1` if no N, `pos_n = index` if
 /// single N, and Err(()) if two or more Ns (C++ returns -2).
+#[allow(clippy::result_unit_err)]
 pub fn convert_nucl_str_to_int32(s: &[u8]) -> Result<(UInt32, i32), ()> {
     let mut int_out: UInt32 = 0;
     let mut pos_n: i32 = -1;
@@ -236,6 +237,7 @@ pub fn convert_nucl_int32_to_string(mut nucl_num: UInt32, l: UInt32) -> String {
     unsafe { String::from_utf8_unchecked(out) }
 }
 
+#[allow(clippy::result_unit_err)]
 pub fn convert_nucl_str_to_int64(s: &[u8]) -> Result<(UInt64, i64), ()> {
     let mut int_out: UInt64 = 0;
     let mut pos_n: i64 = -1;

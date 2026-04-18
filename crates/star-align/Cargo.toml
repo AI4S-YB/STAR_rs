@@ -17,3 +17,6 @@ star-io.workspace = true
 star-stats.workspace = true
 star-sjdb.workspace = true
 opal-sys.workspace = true
+
+[lints]
+workspace = true

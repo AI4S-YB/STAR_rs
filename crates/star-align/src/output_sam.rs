@@ -9,11 +9,11 @@
 use std::fmt::Write as _;
 use std::io::Write;
 
-use star_core::types::{
-    ATTR_AS, ATTR_HI, ATTR_JI, ATTR_JM, ATTR_MD, ATTR_NH, ATTR_NM, ATTR_NM_LOWER, ATTR_XS,
-    EX_G, EX_I_FRAG, EX_L, EX_R, SJ_SAM_ANNOTATED_MOTIF_SHIFT,
-};
 use star_core::seq::rev_complement_nucleotides;
+use star_core::types::{
+    ATTR_AS, ATTR_HI, ATTR_JI, ATTR_JM, ATTR_MD, ATTR_NH, ATTR_NM, ATTR_NM_LOWER, ATTR_XS, EX_G,
+    EX_I_FRAG, EX_L, EX_R, SJ_SAM_ANNOTATED_MOTIF_SHIFT,
+};
 use star_genome::Genome;
 use star_params::parameters::Parameters;
 use star_sjdb::out_sj::OutSJ;
@@ -153,8 +153,7 @@ impl ReadAlign {
                 let last_g = tr_out.exons[tr_out.n_exons as usize - 1][EX_G];
                 let last_r = tr_out.exons[tr_out.n_exons as usize - 1][EX_R];
                 let concordant = p.align_ends_protrude.concordant_pair
-                    || (a0g <= m1g + a0r
-                        && a_mid_g + a_mid_l <= last_g + self.l_read - last_r);
+                    || (a0g <= m1g + a0r && a_mid_g + a_mid_l <= last_g + self.l_read - last_r);
                 if concordant {
                     sam_flag_common |= 0x2;
                 }
@@ -177,14 +176,13 @@ impl ReadAlign {
             p.out_sam_mapq_unique as i32
         };
 
-        let (tag_nm, tag_md) = if sam_attr_order.contains(&ATTR_NM)
-            || sam_attr_order.contains(&ATTR_MD)
-        {
-            // NM/MD are per whole transcript in C++; we compute once per mate below.
-            (0u64, String::new())
-        } else {
-            (0u64, String::new())
-        };
+        let (tag_nm, tag_md) =
+            if sam_attr_order.contains(&ATTR_NM) || sam_attr_order.contains(&ATTR_MD) {
+                // NM/MD are per whole transcript in C++; we compute once per mate below.
+                (0u64, String::new())
+            } else {
+                (0u64, String::new())
+            };
         let _ = (tag_nm, tag_md);
 
         for imate in 0..n_mates {
@@ -225,8 +223,8 @@ impl ReadAlign {
 
             let flag_final = (sam_flag & p.out_sam_flag_and as u16) | p.out_sam_flag_or as u16;
             let chr_name = &map_gen.chr_name[tr_out.chr as usize];
-            let pos_1based = tr_out.exons[i_ex1 as usize][EX_G] + 1
-                - map_gen.chr_start[tr_out.chr as usize];
+            let pos_1based =
+                tr_out.exons[i_ex1 as usize][EX_G] + 1 - map_gen.chr_start[tr_out.chr as usize];
 
             write!(
                 out,
@@ -259,13 +257,12 @@ impl ReadAlign {
                 write!(out, "\t*")?;
             }
 
-            let (tag_nm, tag_md) = if sam_attr_order.contains(&ATTR_NM)
-                || sam_attr_order.contains(&ATTR_MD)
-            {
-                compute_nm_md(self, tr_out, i_ex1, i_ex2, map_gen)
-            } else {
-                (0u64, String::new())
-            };
+            let (tag_nm, tag_md) =
+                if sam_attr_order.contains(&ATTR_NM) || sam_attr_order.contains(&ATTR_MD) {
+                    compute_nm_md(self, tr_out, i_ex1, i_ex2, map_gen)
+                } else {
+                    (0u64, String::new())
+                };
 
             let mut buf = String::new();
             for attr in sam_attr_order {
@@ -306,7 +303,11 @@ impl ReadAlign {
         let lr_orig_pair = self.read_length_pair_original;
         let mut cigar = String::new();
         let e0_r = tr_out.exons[0][EX_R];
-        let sub = if e0_r < lr_orig_left { 0 } else { lr_orig_left + 1 };
+        let sub = if e0_r < lr_orig_left {
+            0
+        } else {
+            lr_orig_left + 1
+        };
         let trim_l = e0_r - sub;
         if trim_l > 0 {
             write!(cigar, "{}S", trim_l).unwrap();
@@ -343,7 +344,7 @@ impl ReadAlign {
                     write!(cigar, "-{}p", ov).unwrap();
                 }
             }
-            write!(cigar, "{}M", tr_out.exons[ii as usize][EX_L]).unwrap();
+            write!(cigar, "{}M", tr_out.exons[ii][EX_L]).unwrap();
         }
         let last = tr_out.n_exons as usize - 1;
         let lr_end_base = if tr_out.exons[last][EX_R] < lr_orig_left {
@@ -486,8 +487,7 @@ fn build_cigar_and_sj_range(
                     cj + SJ_SAM_ANNOTATED_MOTIF_SHIFT as i32
                 };
                 write!(motif, ",{}", motif_val).unwrap();
-                let istart =
-                    prev[EX_G] + prev[EX_L] + 1 - map_gen.chr_start[tr_out.chr as usize];
+                let istart = prev[EX_G] + prev[EX_L] + 1 - map_gen.chr_start[tr_out.chr as usize];
                 let iend = cur[EX_G] - map_gen.chr_start[tr_out.chr as usize];
                 write!(intron, ",{},{}", istart, iend).unwrap();
             } else if gap_g > 0 {

@@ -60,15 +60,12 @@ pub fn read_load(
     let header = std::str::from_utf8(&buf).map_err(io_err)?.to_string();
     let mut header_iter = header.split_whitespace();
     let read_name = header_iter.next().unwrap_or("").to_string();
-    let i_read_all: u64 = header_iter
+    let i_read_all: u64 = header_iter.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+    let read_filter: char = header_iter
         .next()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0);
-    let read_filter: char = header_iter.next().and_then(|s| s.chars().next()).unwrap_or(' ');
-    let read_files_index: u32 = header_iter
-        .next()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0);
+        .and_then(|s| s.chars().next())
+        .unwrap_or(' ');
+    let read_files_index: u32 = header_iter.next().and_then(|s| s.parse().ok()).unwrap_or(0);
     let read_name_extra: String = header_iter.collect::<Vec<_>>().join(" ");
 
     // Line 2: sequence

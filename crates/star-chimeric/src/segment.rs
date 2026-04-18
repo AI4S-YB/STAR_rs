@@ -10,7 +10,7 @@
 //! `ParametersChimeric` threshold.
 
 use star_align::transcript::Transcript;
-use star_core::{EX_L, EX_R, UInt};
+use star_core::{UInt, EX_L, EX_R};
 use star_params::parameters::ParametersChimeric;
 
 /// Port of `class ChimericSegment`.

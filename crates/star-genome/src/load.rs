@@ -75,10 +75,16 @@ pub fn genome_load(p: &mut Parameters, genome: &mut Genome) -> Result<()> {
     };
 
     // --- Open Genome / SA / SAindex files, learn their sizes ---
-    let (mut genome_file, n_genome) =
-        open_stream(&g_dir, "Genome", p.p_ge.g_file_sizes.first().copied().unwrap_or(0))?;
-    let (mut sa_file, n_sa_byte) =
-        open_stream(&g_dir, "SA", p.p_ge.g_file_sizes.get(1).copied().unwrap_or(0))?;
+    let (mut genome_file, n_genome) = open_stream(
+        &g_dir,
+        "Genome",
+        p.p_ge.g_file_sizes.first().copied().unwrap_or(0),
+    )?;
+    let (mut sa_file, n_sa_byte) = open_stream(
+        &g_dir,
+        "SA",
+        p.p_ge.g_file_sizes.get(1).copied().unwrap_or(0),
+    )?;
     let (mut sai_file, _) = open_stream(&g_dir, "SAindex", 1)?;
 
     genome.n_genome = n_genome;
@@ -245,8 +251,12 @@ fn read_genome_parameters(path: &Path) -> Result<GenomeParamsOnDisk> {
 /// Open `g_dir/name` and, if `size == 0`, seek to end to learn its length.
 fn open_stream(g_dir: &Path, name: &str, size: u64) -> Result<(File, u64)> {
     let path = g_dir.join(name);
-    let file = File::open(&path)
-        .with_context(|| format!("EXITING because of FATAL ERROR: could not open genome file: {}", path.display()))?;
+    let file = File::open(&path).with_context(|| {
+        format!(
+            "EXITING because of FATAL ERROR: could not open genome file: {}",
+            path.display()
+        )
+    })?;
     let sz = if size > 0 {
         size
     } else {
@@ -276,11 +286,7 @@ fn chr_info_load(g_dir: &Path, genome: &mut Genome) -> Result<()> {
     let mut reader = BufReader::new(f);
     let mut buf = String::new();
     reader.read_to_string(&mut buf)?;
-    for (slot, tok) in genome
-        .chr_length
-        .iter_mut()
-        .zip(buf.split_whitespace())
-    {
+    for (slot, tok) in genome.chr_length.iter_mut().zip(buf.split_whitespace()) {
         *slot = tok.parse().unwrap_or(0);
     }
 
@@ -290,11 +296,7 @@ fn chr_info_load(g_dir: &Path, genome: &mut Genome) -> Result<()> {
     let mut reader = BufReader::new(f);
     let mut buf = String::new();
     reader.read_to_string(&mut buf)?;
-    for (slot, tok) in genome
-        .chr_start
-        .iter_mut()
-        .zip(buf.split_whitespace())
-    {
+    for (slot, tok) in genome.chr_start.iter_mut().zip(buf.split_whitespace()) {
         *slot = tok.parse().unwrap_or(0);
     }
 

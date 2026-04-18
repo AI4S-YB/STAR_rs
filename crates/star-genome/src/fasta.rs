@@ -37,8 +37,9 @@ pub fn genome_scan_fasta_files(
 
     for (ii, path) in fasta_files.iter().enumerate() {
         let _ = ii;
-        let f = File::open(path)
-            .with_context(|| format!("EXITING because of INPUT ERROR: could not open genomeFastaFile: {path}"))?;
+        let f = File::open(path).with_context(|| {
+            format!("EXITING because of INPUT ERROR: could not open genomeFastaFile: {path}")
+        })?;
         let mut rdr = BufReader::new(f);
 
         // Peek first byte — must be '>'.
@@ -80,7 +81,8 @@ pub fn genome_scan_fasta_files(
                 }
 
                 if !flag_run && !gen.chr_start.is_empty() {
-                    gen.chr_length.push(n - gen.chr_start.last().copied().unwrap_or(0));
+                    gen.chr_length
+                        .push(n - gen.chr_start.last().copied().unwrap_or(0));
                 }
 
                 if n > 0 {
@@ -98,20 +100,18 @@ pub fn genome_scan_fasta_files(
                     );
                     log_main(&msg);
                 }
+            } else if flag_run {
+                // C++: N += convertNucleotidesToNumbersRemoveControls(line, G+N, len)
+                let start = n as usize;
+                let end = start + bytes.len();
+                let slice = &mut g[start..end];
+                let written = convert_nucleotides_to_numbers_remove_controls(bytes, slice);
+                n += written;
             } else {
-                if flag_run {
-                    // C++: N += convertNucleotidesToNumbersRemoveControls(line, G+N, len)
-                    let start = n as usize;
-                    let end = start + bytes.len();
-                    let slice = &mut g[start..end];
-                    let written = convert_nucleotides_to_numbers_remove_controls(bytes, slice);
-                    n += written;
-                } else {
-                    // Count non-control chars (>=32).
-                    for &b in bytes {
-                        if (b as i32) >= 32 {
-                            n += 1;
-                        }
+                // Count non-control chars (>=32).
+                for &b in bytes {
+                    if (b as i32) >= 32 {
+                        n += 1;
                     }
                 }
             }

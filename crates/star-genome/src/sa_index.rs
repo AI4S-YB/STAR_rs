@@ -25,7 +25,9 @@ pub unsafe fn genome_sa_index(
     map_gen.genome_sa_index_start.push(0);
     for ii in 1..=sa_index_nbases as u64 {
         let prev = *map_gen.genome_sa_index_start.last().unwrap();
-        map_gen.genome_sa_index_start.push(prev + (1u64 << (2 * ii)));
+        map_gen
+            .genome_sa_index_start
+            .push(prev + (1u64 << (2 * ii)));
     }
     map_gen.n_sai = map_gen.genome_sa_index_start[sa_index_nbases as usize];
 
@@ -41,8 +43,15 @@ pub unsafe fn genome_sa_index(
     sai.allocate_array();
 
     unsafe {
-        genome_sa_index_chunk(g_ptr, sa, &mut sai, 0, sa.length.saturating_sub(1),
-            sa_index_nbases, map_gen)?;
+        genome_sa_index_chunk(
+            g_ptr,
+            sa,
+            &mut sai,
+            0,
+            sa.length.saturating_sub(1),
+            sa_index_nbases,
+            map_gen,
+        )?;
     }
     Ok(sai)
 }
@@ -63,9 +72,8 @@ unsafe fn genome_sa_index_chunk(
     let isa_step = map_gen.n_sa / (1u64 << (2 * sa_index_nbases)) + 1;
 
     let mut isa = i_sa1;
-    let (mut ind_full, mut il4) = unsafe {
-        fun_calc_sai_from_sa(g_ptr, sa, map_gen, isa, sa_index_nbases as i32)
-    };
+    let (mut ind_full, mut il4) =
+        unsafe { fun_calc_sai_from_sa(g_ptr, sa, map_gen, isa, sa_index_nbases as i32) };
 
     while isa <= i_sa2 {
         for i_l in 0..sa_index_nbases as i32 {
@@ -93,16 +101,22 @@ unsafe fn genome_sa_index_chunk(
                 }
                 ind0[i_l as usize] = ind_pref;
             } else if ind_pref < prev {
-                anyhow::bail!(
-                    "BUG: next index is smaller than previous at iL={i_l}, isa={isa}"
-                );
+                anyhow::bail!("BUG: next index is smaller than previous at iL={i_l}, isa={isa}");
             }
         }
 
         // Advance isa with large-step + binary search.
         unsafe {
-            fun_sai_find_next_index(g_ptr, sa, isa_step, &mut isa, &mut ind_full,
-                &mut il4, sa_index_nbases as i32, map_gen);
+            fun_sai_find_next_index(
+                g_ptr,
+                sa,
+                isa_step,
+                &mut isa,
+                &mut ind_full,
+                &mut il4,
+                sa_index_nbases as i32,
+                map_gen,
+            );
         }
     }
 
@@ -111,7 +125,11 @@ unsafe fn genome_sa_index_chunk(
         let start = map_gen.genome_sa_index_start[i_l];
         let end = map_gen.genome_sa_index_start[i_l + 1];
         let prev = ind0[i_l];
-        let lo = if prev == u64::MAX { start } else { start + prev + 1 };
+        let lo = if prev == u64::MAX {
+            start
+        } else {
+            start + prev + 1
+        };
         for ii in lo..end {
             sai.write_packed(ii, map_gen.n_sa | map_gen.sai_mark_absent_mask_c);
         }
@@ -144,9 +162,7 @@ unsafe fn fun_sai_find_next_index(
     }
 
     if *isa >= map_gen.n_sa {
-        let (nf, nil) = unsafe {
-            fun_calc_sai_from_sa(g_ptr, sa, map_gen, map_gen.n_sa - 1, l)
-        };
+        let (nf, nil) = unsafe { fun_calc_sai_from_sa(g_ptr, sa, map_gen, map_gen.n_sa - 1, l) };
         *ind_full = nf;
         *il4 = nil;
         if nf == ind_full_prev && nil == il4_prev {

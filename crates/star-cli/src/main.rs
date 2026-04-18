@@ -113,7 +113,12 @@ fn run_align_reads(p: &mut star_params::parameters::Parameters) -> anyhow::Resul
     if p.sjdb_insert.yes {
         let genome1 = genome.clone();
         let mut sjdb_loci = star_sjdb::SjdbLoci::new();
-        star_sjdb::insert_junctions::sjdb_insert_junctions(p, &mut genome, &genome1, &mut sjdb_loci)?;
+        star_sjdb::insert_junctions::sjdb_insert_junctions(
+            p,
+            &mut genome,
+            &genome1,
+            &mut sjdb_loci,
+        )?;
     }
 
     // ----- main mapping pass -----
@@ -224,8 +229,12 @@ fn run_mapping_pass(
     // to BAM at the end and delete the intermediate.
     let sam_scratch_path = format!("{out_prefix}Aligned.out.sam.tmp");
     let sam_file: Box<dyn Write + Send> = if emit_sam {
-        std::fs::create_dir_all(std::path::Path::new(out_prefix).parent().unwrap_or(std::path::Path::new(".")))
-            .ok();
+        std::fs::create_dir_all(
+            std::path::Path::new(out_prefix)
+                .parent()
+                .unwrap_or(std::path::Path::new(".")),
+        )
+        .ok();
         if want_sam {
             Box::new(BufWriter::new(File::create(&sam_path)?))
         } else if want_bam {
@@ -272,8 +281,11 @@ fn run_mapping_pass(
     // M7.2 Transcriptome load: only if --quantMode GeneCounts (or
     // TranscriptomeSAM in M7.4+).
     let quant_enabled = emit_sam && p.quant.ge_count.yes;
-    let transcriptome =
-        if emit_sam && p.quant.yes { star_quant::transcriptome::Transcriptome::load(p)? } else { None };
+    let transcriptome = if emit_sam && p.quant.yes {
+        star_quant::transcriptome::Transcriptome::load(p)?
+    } else {
+        None
+    };
     let n_ge = transcriptome.as_ref().map(|t| t.n_ge).unwrap_or(0);
 
     // Quant hook (runs per-read after chim hook, before output_alignments).
@@ -317,8 +329,11 @@ fn run_mapping_pass(
             quant_hook,
         )?
     } else {
-        let mut chunk =
-            star_align::chunk::ReadAlignChunk::new(0, p.run_rng_seed as u32, sam_attrs.order.clone());
+        let mut chunk = star_align::chunk::ReadAlignChunk::new(
+            0,
+            p.run_rng_seed as u32,
+            sam_attrs.order.clone(),
+        );
         let mut q = quant_init();
         let n = chunk.process_chunks(
             p,

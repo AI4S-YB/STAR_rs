@@ -13,9 +13,7 @@ use star_core::seq::complement_seq_numbers;
 use star_core::types::GENOME_SPACING_CHAR;
 use star_genome::genome::Genome;
 use star_genome::load::LOAD_L;
-use star_genome::sa_funs::{
-    fun_calc_sai, fun_compare_uint_and_suffixes, suffix_array_search1,
-};
+use star_genome::sa_funs::{fun_calc_sai, fun_compare_uint_and_suffixes, suffix_array_search1};
 use star_params::parameters::Parameters;
 
 use crate::binary_search2::binary_search2_pair;
@@ -73,7 +71,11 @@ pub fn sjdb_build_index(
         let seq0 = &gsj[isj_us * sjdb_length as usize..];
         let seq1 = &g1c[isj_us * sjdb_length as usize..];
 
-        let isj1 = if isj < sjdb_n { isj } else { 2 * sjdb_n - 1 - isj };
+        let isj1 = if isj < sjdb_n {
+            isj
+        } else {
+            2 * sjdb_n - 1 - isj
+        };
         let sjdb_ind = if map_gen1.sjdb_n == 0 {
             -1i64
         } else {
@@ -254,10 +256,9 @@ pub fn sjdb_build_index(
                 }
                 map_gen.sai.write_packed(ii, i_sa1 + i_sj as u64);
                 for ii0 in (ind0 + 1)..ii {
-                    map_gen.sai.write_packed(
-                        ii0,
-                        (i_sa2 + i_sj as u64) | map_gen.sai_mark_absent_mask_c,
-                    );
+                    map_gen
+                        .sai
+                        .write_packed(ii0, (i_sa2 + i_sj as u64) | map_gen.sai_mark_absent_mask_c);
                 }
                 ind0 = ii;
             }
@@ -283,7 +284,9 @@ pub fn sjdb_build_index(
                     }
                     if ind2 >= 0 {
                         let cur = map_gen.sai.get(ind2 as u64);
-                        map_gen.sai.write_packed(ind2 as u64, cur | sai_mark_n_mask_c);
+                        map_gen
+                            .sai
+                            .write_packed(ind2 as u64, cur | sai_mark_n_mask_c);
                     }
                     ind1 <<= 2;
                 }

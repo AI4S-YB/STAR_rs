@@ -11,3 +11,6 @@ anyhow.workspace = true
 star-core.workspace = true
 star-params.workspace = true
 star-align.workspace = true
+
+[lints]
+workspace = true

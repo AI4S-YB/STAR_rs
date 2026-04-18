@@ -21,9 +21,7 @@ pub fn write_sam_headers(
     genome: &Genome,
     sam_out: &mut impl Write,
 ) -> anyhow::Result<(String, String)> {
-    if p.out_sam_mode == "None"
-        || p.out_sam_type.first().map(|s| s.as_str()) == Some("None")
-    {
+    if p.out_sam_mode == "None" || p.out_sam_type.first().map(|s| s.as_str()) == Some("None") {
         return Ok((String::new(), String::new()));
     }
 
@@ -52,10 +50,7 @@ pub fn write_sam_headers(
         STAR_VERSION, p.command_line_full
     ));
 
-    body.push_str(&format!(
-        "@CO\tuser command line: {}\n",
-        p.command_line
-    ));
+    body.push_str(&format!("@CO\tuser command line: {}\n", p.command_line));
 
     let header_hd = "@HD\tVN:1.4".to_string();
     let sam_header = format!("{}\n{}", header_hd, body);

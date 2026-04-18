@@ -192,7 +192,11 @@ pub fn pack_chunks(
             for i in 0..n_elems {
                 let bytes = &buf[i * 8..i * 8 + 8];
                 let v = u64::from_le_bytes(bytes.try_into().unwrap());
-                let packed = if v < n_genome { v } else { (v - n_genome) | n2_bit };
+                let packed = if v < n_genome {
+                    v
+                } else {
+                    (v - n_genome) | n2_bit
+                };
                 sa.write_packed(packed_ind + i as u64, packed);
             }
             packed_ind += n_elems as u64;
@@ -216,14 +220,11 @@ pub unsafe fn sort_suffix_array(
     g_strand_bit: u8,
     dir: &Path,
 ) -> Result<u64> {
-    let (counts, n_sa) = unsafe {
-        count_prefix_buckets(g_ptr, params.n_genome, params.sparse_d)
-    };
+    let (counts, n_sa) = unsafe { count_prefix_buckets(g_ptr, params.n_genome, params.sparse_d) };
 
     let sa_chunk_size = {
-        let raw = (params.limit_genome_generate_ram - params.n_g1_alloc)
-            / 8
-            / params.run_thread_n as u64;
+        let raw =
+            (params.limit_genome_generate_ram - params.n_g1_alloc) / 8 / params.run_thread_n as u64;
         let raw = raw * 6 / 10;
         if params.run_thread_n > 1 {
             raw.min(n_sa / (params.run_thread_n as u64 - 1))

@@ -16,9 +16,9 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 license = "MIT"
 repository = "https://github.com/AI4S-YB/STAR_rs"
 
@@ -55,3 +55,17 @@ lto = "thin"
 codegen-units = 1
 opt-level = 3
 debug = 1
+
+# Port-fidelity allowances: STAR_rs is a 1:1 port of STAR's C++ code, so some
+# idioms (long argument lists, index-style loops, sparse `# Safety` docs on
+# unsafe shims) intentionally mirror the original and are not worth refactoring
+# just to satisfy clippy under `-D warnings`.
+[workspace.lints.clippy]
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+missing_safety_doc = "allow"
+doc_lazy_continuation = "allow"
+doc_overindented_list_items = "allow"
+branches_sharing_code = "allow"
+if_same_then_else = "allow"
+type_complexity = "allow"

@@ -2,9 +2,9 @@
 //!
 //! Ports (module → C++ source):
 //! - [`prepare`]     -> `sjdbPrepare.cpp` + `sjdbLoadFromFiles.cpp`
-//!                      + `sjdbLoadFromStream.cpp` + `sjdbReadBED.cpp`
-//!                      + `Genome_insertSequences.cpp`
-//!                      + `sjdbInsertJunctions.cpp` + `sjdbBuildIndex.cpp`
+//!   + `sjdbLoadFromStream.cpp` + `sjdbReadBED.cpp`
+//!   + `Genome_insertSequences.cpp`
+//!   + `sjdbInsertJunctions.cpp` + `sjdbBuildIndex.cpp`
 //! - [`out_sj`]      -> `OutSJ.{h,cpp}` + `outputSJ.cpp`
 //! - [`twopass`]     -> `twoPassRunPass1.cpp`
 //! - [`loader`]      -> `sjAlignSplit.cpp`

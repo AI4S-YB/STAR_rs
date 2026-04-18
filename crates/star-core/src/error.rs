@@ -38,10 +38,10 @@ pub fn exit_with_error(
     error_int: i32,
 ) -> ! {
     let mut buf = String::new();
-    let _ = write!(buf, "\n{}\n", message);
-    let _ = write!(
+    let _ = writeln!(buf, "\n{}", message);
+    let _ = writeln!(
         buf,
-        "{} ...... FATAL ERROR, exiting\n",
+        "{} ...... FATAL ERROR, exiting",
         time_month_day_time_now()
     );
     stream1(&buf);

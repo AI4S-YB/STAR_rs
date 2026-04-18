@@ -206,7 +206,9 @@ impl Default for PackedArray {
 impl std::ops::Index<u64> for PackedArray {
     type Output = u64;
     fn index(&self, _: u64) -> &u64 {
-        unimplemented!("use PackedArray::get(); no long-lived reference possible for bit-packed reads")
+        unimplemented!(
+            "use PackedArray::get(); no long-lived reference possible for bit-packed reads"
+        )
     }
 }
 
@@ -225,7 +227,11 @@ mod tests {
             let n = 64u64.min((1u64 << bits.min(16)) + 3);
             pa.define_bits(bits, n);
             pa.allocate_array();
-            let mask = if bits == 64 { !0u64 } else { (1u64 << bits) - 1 };
+            let mask = if bits == 64 {
+                !0u64
+            } else {
+                (1u64 << bits) - 1
+            };
             for i in 0..n {
                 let v = (i.wrapping_mul(0x9E37_79B9_7F4A_7C15)) & mask;
                 pa.write_packed(i, v);

@@ -5,7 +5,7 @@
 //! scales that to 1000 matching `COMPILE_FOR_LONG_READS`.
 
 use star_core::types::{IntScore, MAX_N_EXONS};
-use star_core::{EX_G, EX_L, EX_R, EX_SIZE, UInt};
+use star_core::{UInt, EX_G, EX_L, EX_R, EX_SIZE};
 
 #[derive(Clone, Debug)]
 pub struct Transcript {
@@ -189,10 +189,9 @@ impl Transcript {
     pub fn chr_start_length_extended(&self) -> u64 {
         let start1 = self.c_start - self.exons[0][EX_R];
         let last = self.n_exons as usize - 1;
-        let length1 = self.exons[last][EX_G] + self.l_read
-            - self.exons[last][EX_R]
-            - self.exons[0][EX_G]
-            + self.exons[0][EX_R];
+        let length1 =
+            self.exons[last][EX_G] + self.l_read - self.exons[last][EX_R] - self.exons[0][EX_G]
+                + self.exons[0][EX_R];
         (start1 << 32) | length1
     }
 
@@ -223,7 +222,11 @@ impl Transcript {
         if self.n_exons == 0 {
             return self.max_score;
         }
-        let r: &[u8] = if self.ro_str == 0 { &read1[0] } else { &read1[2] };
+        let r: &[u8] = if self.ro_str == 0 {
+            &read1[0]
+        } else {
+            &read1[2]
+        };
         for iex in 0..self.n_exons as usize {
             let e = &self.exons[iex];
             for ii in 0..e[EX_L] {
@@ -247,13 +250,15 @@ impl Transcript {
                 match self.canon_sj[iex] {
                     -3 => {}
                     -2 => {
-                        let gap =
-                            self.exons[iex + 1][EX_R] - self.exons[iex][EX_R] - self.exons[iex][EX_L];
+                        let gap = self.exons[iex + 1][EX_R]
+                            - self.exons[iex][EX_R]
+                            - self.exons[iex][EX_L];
                         self.max_score += gap as i32 * score_ins_base + score_ins_open;
                     }
                     -1 => {
-                        let gap =
-                            self.exons[iex + 1][EX_G] - self.exons[iex][EX_G] - self.exons[iex][EX_L];
+                        let gap = self.exons[iex + 1][EX_G]
+                            - self.exons[iex][EX_G]
+                            - self.exons[iex][EX_L];
                         self.max_score += gap as i32 * score_del_base + score_del_open;
                     }
                     0 => self.max_score += score_gap_noncan + score_gap,
@@ -266,9 +271,8 @@ impl Transcript {
         }
         if score_genomic_length_log2_scale != 0.0 {
             let last = self.n_exons as usize - 1;
-            let span = (self.exons[last][EX_G] + self.exons[last][EX_L]
-                - self.exons[0][EX_G])
-                .max(1);
+            let span =
+                (self.exons[last][EX_G] + self.exons[last][EX_L] - self.exons[0][EX_G]).max(1);
             let adj = ((span as f64).log2() * score_genomic_length_log2_scale - 0.5).ceil();
             self.max_score += adj as i32;
         }

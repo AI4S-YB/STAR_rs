@@ -70,11 +70,7 @@ pub fn write_sai(
 }
 
 /// `genomeParametersWrite(fileName, P, errorOut, mapGen)`.
-pub fn genome_parameters_write(
-    file_name: &Path,
-    p: &Parameters,
-    genome: &Genome,
-) -> Result<()> {
+pub fn genome_parameters_write(file_name: &Path, p: &Parameters, genome: &Genome) -> Result<()> {
     let mut f = open_w(file_name)?;
     writeln!(f, "### {}", p.command_line_full)?;
     writeln!(f, "### GstrandBit {}", genome.g_strand_bit as i32)?;
@@ -90,11 +86,7 @@ pub fn genome_parameters_write(
     writeln!(f, "genomeChrBinNbits\t{}", p.p_ge.g_chr_bin_nbits)?;
     writeln!(f, "genomeSAsparseD\t{}", p.p_ge.g_sa_sparse_d)?;
 
-    writeln!(
-        f,
-        "genomeTransformType\t{}",
-        p.p_ge.transform.ty_string
-    )?;
+    writeln!(f, "genomeTransformType\t{}", p.p_ge.transform.ty_string)?;
     writeln!(f, "genomeTransformVCF\t{}", p.p_ge.transform.vcf_file)?;
 
     writeln!(f, "sjdbOverhang\t{}", genome.sjdb_overhang)?;

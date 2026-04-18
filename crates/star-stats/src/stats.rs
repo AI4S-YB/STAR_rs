@@ -206,7 +206,13 @@ impl Stats {
             w1 = w1
         )?;
         writeln!(out)?;
-        writeln!(out, "{:>w1$}{}", "Number of input reads |\t", self.read_n, w1 = w1)?;
+        writeln!(
+            out,
+            "{:>w1$}{}",
+            "Number of input reads |\t",
+            self.read_n,
+            w1 = w1
+        )?;
         let avg_len = if self.read_n > 0 {
             self.read_bases / self.read_n
         } else {
@@ -309,7 +315,13 @@ impl Stats {
         } else {
             0.0
         };
-        writeln!(out, "{:>w1$}{:.2}", "Deletion average length |\t", del_avg, w1 = w1)?;
+        writeln!(
+            out,
+            "{:>w1$}{:.2}",
+            "Deletion average length |\t",
+            del_avg,
+            w1 = w1
+        )?;
         writeln!(
             out,
             "{:>w1$}{:.2}%",
@@ -322,7 +334,13 @@ impl Stats {
         } else {
             0.0
         };
-        writeln!(out, "{:>w1$}{:.2}", "Insertion average length |\t", ins_avg, w1 = w1)?;
+        writeln!(
+            out,
+            "{:>w1$}{:.2}",
+            "Insertion average length |\t",
+            ins_avg,
+            w1 = w1
+        )?;
         write!(out, "{:>w1$}", "MULTI-MAPPING READS:\n", w1 = w1)?;
         writeln!(
             out,
