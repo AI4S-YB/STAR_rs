@@ -192,28 +192,28 @@ impl ReadAlign {
         if mapped {
             if self.n_tr == 1 {
                 stats.mapped_reads_u += 1;
+                for tr in &self.tr_mult_array {
+                    let exon_lengths: Vec<u64> = tr
+                        .exons
+                        .iter()
+                        .take(tr.n_exons as usize)
+                        .map(|e| e[star_core::types::EX_L])
+                        .collect();
+                    let view = star_stats::stats::TranscriptStatView {
+                        n_exons: tr.n_exons,
+                        n_mm: tr.n_mm,
+                        n_ins: tr.n_ins,
+                        n_del: tr.n_del,
+                        l_ins: tr.l_ins,
+                        l_del: tr.l_del,
+                        exon_lengths: &exon_lengths,
+                        canon_sj: &tr.canon_sj[..tr.n_exons as usize],
+                        sj_annot: &tr.sj_annot[..tr.n_exons as usize],
+                    };
+                    stats.transcript_stats(&view, self.l_read);
+                }
             } else if self.n_tr > 1 {
                 stats.mapped_reads_m += 1;
-            }
-            for tr in &self.tr_mult_array {
-                let exon_lengths: Vec<u64> = tr
-                    .exons
-                    .iter()
-                    .take(tr.n_exons as usize)
-                    .map(|e| e[star_core::types::EX_L])
-                    .collect();
-                let view = star_stats::stats::TranscriptStatView {
-                    n_exons: tr.n_exons,
-                    n_mm: tr.n_mm,
-                    n_ins: tr.n_ins,
-                    n_del: tr.n_del,
-                    l_ins: tr.l_ins,
-                    l_del: tr.l_del,
-                    exon_lengths: &exon_lengths,
-                    canon_sj: &tr.canon_sj[..tr.n_exons as usize],
-                    sj_annot: &tr.sj_annot[..tr.n_exons as usize],
-                };
-                stats.transcript_stats(&view, self.l_read);
             }
         }
 

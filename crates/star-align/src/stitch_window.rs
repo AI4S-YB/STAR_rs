@@ -144,7 +144,7 @@ pub unsafe fn stitch_window_aligns(
         for isj in 0..tr_a.n_exons as usize {
             tr_a.r_length += tr_a.exons[isj][EX_L];
         }
-        tr_a.g_length = t_g2 + 1 - tr_a.g_start;
+        tr_a.g_length = t_g2.wrapping_add(1).wrapping_sub(tr_a.g_start);
 
         // Minimum junction-overhang filter.
         for isj in 0..tr_a.n_exons.saturating_sub(1) as usize {

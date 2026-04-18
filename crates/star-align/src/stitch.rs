@@ -686,7 +686,9 @@ pub unsafe fn stitch_align_to_transcript(
             let extlen: u64 = if p.align_ends_type.ext[i_frag_b as usize][1] {
                 DEF_READ_SEQ_LENGTH_MAX as u64
             } else {
-                g_bstart - tr_a.exons[0][EX_G] + tr_a.exons[0][EX_R]
+                g_bstart
+                    .wrapping_sub(tr_a.exons[0][EX_G])
+                    .wrapping_add(tr_a.exons[0][EX_R])
             };
             if extend_align(
                 r,
