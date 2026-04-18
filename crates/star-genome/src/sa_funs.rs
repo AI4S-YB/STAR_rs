@@ -420,10 +420,6 @@ pub fn fun_calc_sai(g_seq: &[u8], l: u32) -> i64 {
         let g = g_seq[ii];
         ind1 <<= 2;
         if g > 3 {
-            // Early termination: shift remaining bits
-            for _ in (ii + 1)..l as usize {
-                ind1 <<= 2;
-            }
             return -1;
         }
         ind1 += g as i64;
