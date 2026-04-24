@@ -24,5 +24,10 @@ star-bam.workspace = true
 star-sjdb.workspace = true
 star-stats.workspace = true
 
+[dev-dependencies]
+flate2.workspace = true
+bzip2.workspace = true
+xz2.workspace = true
+
 [lints]
 workspace = true

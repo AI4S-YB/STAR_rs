@@ -6,10 +6,11 @@
 
 use std::collections::{BTreeSet, HashMap};
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufWriter, Write};
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use star_core::compression::open_maybe_compressed;
 use star_genome::genome::Genome;
 use star_params::parameters::Parameters;
 
@@ -69,13 +70,13 @@ impl Gtf {
             }
         }
 
-        let file = File::open(&p.p_ge.sjdb_gtf_file).with_context(|| {
-            format!(
-                "FATAL error, could not open file pGe.sjdbGTFfile={}",
-                p.p_ge.sjdb_gtf_file
-            )
-        })?;
-        let reader = BufReader::new(file);
+        let reader =
+            open_maybe_compressed(Path::new(&p.p_ge.sjdb_gtf_file)).with_context(|| {
+                format!(
+                    "FATAL error, could not open file pGe.sjdbGTFfile={}",
+                    p.p_ge.sjdb_gtf_file
+                )
+            })?;
 
         let mut out = Self {
             gtf_yes: true,

@@ -12,6 +12,7 @@
 //! Naming discipline: `u64` for the C++ `uint` (== unsigned long long, 64-bit),
 //! `i32` for `intScore`. See the `types` module for aliases.
 
+pub mod compression;
 pub mod error;
 pub mod packed;
 pub mod seq;

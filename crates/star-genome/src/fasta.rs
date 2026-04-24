@@ -4,11 +4,11 @@
 //! and the total padded genome length `N`; second with `flag_run=true` to
 //! actually copy the numeric codes into the genome buffer.
 
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::BufRead;
 
 use anyhow::{anyhow, Context, Result};
 
+use star_core::compression::open_maybe_compressed;
 use star_core::seq::convert_nucleotides_to_numbers_remove_controls;
 
 use crate::genome::Genome;
@@ -37,10 +37,9 @@ pub fn genome_scan_fasta_files(
 
     for (ii, path) in fasta_files.iter().enumerate() {
         let _ = ii;
-        let f = File::open(path).with_context(|| {
+        let mut rdr = open_maybe_compressed(path).with_context(|| {
             format!("EXITING because of INPUT ERROR: could not open genomeFastaFile: {path}")
         })?;
-        let mut rdr = BufReader::new(f);
 
         // Peek first byte — must be '>'.
         let buf = rdr.fill_buf()?;
@@ -142,6 +141,7 @@ pub fn genome_scan_fasta_files(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
 

@@ -248,8 +248,9 @@ fn run_mapping_pass(
     out_prefix: &str,
     emit_sam: bool,
 ) -> anyhow::Result<(u64, star_stats::stats::Stats, star_sjdb::out_sj::OutSJ)> {
+    use anyhow::Context;
     use std::fs::File;
-    use std::io::{BufReader, BufWriter};
+    use std::io::{BufRead, BufWriter};
 
     let sam_attrs = star_params::sam_attributes::SamAttributes::resolve(p)?;
     let sam_path = format!("{out_prefix}Aligned.out.sam");
@@ -290,10 +291,11 @@ fn run_mapping_pass(
         star_io::sam_headers::write_sam_headers(p, genome, &mut sam_out)?;
     }
 
-    let mut readers: Vec<BufReader<File>> = Vec::new();
+    let mut readers: Vec<Box<dyn BufRead + Send>> = Vec::new();
     for path in &p.read_files_in {
-        let f = File::open(path)?;
-        readers.push(BufReader::new(f));
+        let reader = star_core::compression::open_maybe_compressed(path)
+            .with_context(|| format!("opening --readFilesIn {path}"))?;
+        readers.push(reader);
     }
     if readers.is_empty() {
         anyhow::bail!("EXITING: --readFilesIn is empty");
@@ -433,7 +435,9 @@ fn run_mapping_pass(
         let sam_header_bytes = std::fs::read(&sam_scratch_path)?;
         let mut hdr_end = 0usize;
         for line in sam_header_bytes.split_inclusive(|&b| b == b'\n') {
-            if !line.starts_with(b"@") { break; }
+            if !line.starts_with(b"@") {
+                break;
+            }
             hdr_end += line.len();
         }
         let sam_header = &sam_header_bytes[..hdr_end];

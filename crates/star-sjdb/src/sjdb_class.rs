@@ -11,9 +11,10 @@
 //! | pass-1 novel SJ     |    0     |
 
 use std::collections::BTreeSet;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead};
 use std::path::Path;
+
+use star_core::compression::open_maybe_compressed;
 
 /// Port of `class SjdbClass`.
 #[derive(Debug, Default, Clone)]
@@ -89,7 +90,7 @@ impl SjdbLoci {
         path: impl AsRef<Path>,
         priority: u8,
     ) -> io::Result<()> {
-        let f = File::open(&path).map_err(|e| {
+        let reader = open_maybe_compressed(&path).map_err(|e| {
             io::Error::new(
                 e.kind(),
                 format!(
@@ -98,7 +99,7 @@ impl SjdbLoci {
                 ),
             )
         })?;
-        self.load_from_stream(BufReader::new(f))?;
+        self.load_from_stream(reader)?;
         self.priority.resize(self.chr.len(), priority);
         Ok(())
     }

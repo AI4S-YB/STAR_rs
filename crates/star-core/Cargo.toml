@@ -11,6 +11,9 @@ anyhow.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 libc.workspace = true
+flate2.workspace = true
+bzip2.workspace = true
+xz2.workspace = true
 
 [features]
 default = []
