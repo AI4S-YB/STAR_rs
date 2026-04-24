@@ -203,8 +203,9 @@ M8 runs in three tiers. Each tier must be green before the next runs.
 
 ### M8-tier3 — full Mp genome x full MP-S1 PE library
 
-- Reads: `MP-S1_{1,2}.fq.gz` (tens of millions of pairs). Requires
-  either T6 (`--readFilesCommand zcat`) or manual `zcat` into plain FASTQ.
+- Reads: `MP-S1_{1,2}.fq.gz` (tens of millions of pairs). Rust STAR
+  can read these directly through extension-based compressed text input
+  support; no `zcat` staging is required.
 - Matrix: one configuration — `runThreadN=16`,
   `--outSAMtype BAM SortedByCoordinate`,
   `--quantMode "GeneCounts TranscriptomeSAM"`,
@@ -217,14 +218,19 @@ M8 runs in three tiers. Each tier must be green before the next runs.
 
 ### Extra prerequisites beyond M7-parked
 
-**T6. `--readFilesCommand` (pipe support)**
+**T6. compressed text input / `--readFilesCommand` parity**
 
-- Current: `--readFilesIn` paths are opened with `File::open` directly;
-  gzip inputs fail.
-- Work: port `Parameters::readFilesCommandString` -> spawn child process
-  with stdout piped into the fastq reader; support `zcat`, `bzcat`,
-  etc. Must work for SE + PE + interleaved SAM input.
-- Blocks M8-tier3 (the gzipped MP-S1 reads).
+- Status: done for native text decompression. STAR-rs now opens plain
+  text plus `.gz`, `.xz`, `.bz`, and `.bz2` inputs for
+  `--readFilesIn`, `--genomeFastaFiles`, `--sjdbGTFfile`, and
+  `--sjdbFileChrStartEnd`.
+- Validation: `crates/star-cli/tests/compressed_inputs.rs` compares
+  compressed FASTA/GTF/FASTQ inputs against the same plain-text inputs.
+- Remaining STAR-compatibility work: port
+  `Parameters::readFilesCommandString` -> spawn child process with
+  stdout piped into the reader. This is still needed for arbitrary
+  commands such as `samtools view`, but no longer blocks M8-tier3
+  gzipped FASTQ input.
 
 **T7. `--sjdbGTFfile` in `--runMode genomeGenerate`**
 
@@ -273,5 +279,5 @@ Environment knobs:
 
 1. M8-tier2 — full Mp genome x 10k PE reads, single SAM config (no
    BAM / GC / 2-pass) as a genome-scale sanity check.
-2. M8-tier3 — full Mp genome x full MP-S1 PE library, gzip-reads
-   path. Blocked on `readFilesCommand` support.
+2. M8-tier3 — full Mp genome x full MP-S1 PE library, direct gzip-read
+   path. Unblocked by native compressed-input support; pending full run.

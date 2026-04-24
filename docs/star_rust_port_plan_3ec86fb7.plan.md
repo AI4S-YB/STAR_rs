@@ -78,7 +78,7 @@ STAR 依赖 3 个非 Rust 组件 + OS 原语，需分别选型：
 star-rs/
 ├── Cargo.toml                    # workspace
 ├── crates/
-│   ├── star-core/                # IncludeDefine 常量、类型别名、PackedArray、SequenceFuns、serviceFuns
+│   ├── star-core/                # IncludeDefine 常量、类型别名、PackedArray、SequenceFuns、serviceFuns、压缩文本输入 opener
 │   ├── star-params/              # Parameters, ParametersGenome, ParametersChimeric, ParametersClip, parametersDefault 嵌入
 │   ├── star-genome/              # Genome, SA/SAi 构建、sjdb 构建、FASTA 扫描、genomeGenerate
 │   ├── star-io/                  # InOutStreams、readLoad、fastq/fasta 解码、readFilesCommand 子进程
@@ -136,7 +136,8 @@ inline uint PackedArray::operator [] (uint ii) {
 ### 第 3 层 · IO 和线程模型
 
 - [InOutStreams.cpp](STAR/source/InOutStreams.cpp)、[readLoad.cpp](STAR/source/readLoad.cpp)、[Parameters_openReadsFiles.cpp](STAR/source/Parameters_openReadsFiles.cpp)、[Parameters_closeReadsFiles.cpp](STAR/source/Parameters_closeReadsFiles.cpp)、[Parameters_readFilesInit.cpp](STAR/source/Parameters_readFilesInit.cpp) -> `star-io`。
-  - 支持 `readFilesCommand`（例如 `zcat`）：用 `std::process::Command` + piped stdin 复刻原 `popen` 逻辑（STAR 用 fork+exec，PID 保留在 `P.readFilesCommandPID`）。
+  - 已先实现按路径后缀的内置压缩文本输入：`.gz`、`.xz`、`.bz`、`.bz2` 可用于 FASTQ/FASTA/GTF/SJ 文本输入，覆盖 `--readFilesIn`、`--genomeFastaFiles`、`--sjdbGTFfile` 和 `--sjdbFileChrStartEnd`。
+  - `readFilesCommand`（例如 `zcat` 或 `samtools view`）仍作为后续兼容项：用 `std::process::Command` + piped stdin 复刻原 `popen` 逻辑（STAR 用 fork+exec，PID 保留在 `P.readFilesCommandPID`）。
 - [ThreadControl.cpp](STAR/source/ThreadControl.cpp) + [GlobalVariables.cpp](STAR/source/GlobalVariables.cpp)：8 个 pthread_mutex 全局。
   - Rust 侧改为一个 `struct ThreadChunks { in_read: Mutex<InReadState>, out_sam: Mutex<()>, out_bam1: Mutex<BamWriter>, ... }`，用 `Arc<ThreadChunks>` 传递，逻辑 1:1。
 - [mapThreadsSpawn.cpp](STAR/source/mapThreadsSpawn.cpp) + [ReadAlignChunk.cpp](STAR/source/ReadAlignChunk.cpp) + [ReadAlignChunk_processChunks.cpp](STAR/source/ReadAlignChunk_processChunks.cpp)（302 LOC）+ [ReadAlignChunk_mapChunk.cpp](STAR/source/ReadAlignChunk_mapChunk.cpp) -> `star-align::chunk`。线程池数 = `P.runThreadN`。

@@ -23,7 +23,7 @@ supported subset, verified by the end-to-end regression script in
 | M7-parked | remaining BAM/wig/dedup features (see `docs/roadmap.md`) | pending |
 | M8-tier1 | Internal regression on Mp/chr1 × 10k PE reads (byte-exact) | done |
 | M8-tier2 | Full *M. polymorpha* genome × 10k PE reads | pending |
-| M8-tier3 | Full *M. polymorpha* genome × MP-S1 library (gzipped reads) | blocked on `readFilesCommand` |
+| M8-tier3 | Full *M. polymorpha* genome × MP-S1 library (gzipped reads) | unblocked by compressed-input support; full run pending |
 
 Regression coverage: 29 cases in `tests/e2e.sh` (all green) plus the
 Mp/chr1 tier-1 matrix and checked-in fixture regressions described in
@@ -75,6 +75,8 @@ cargo build --release -p star-cli
   - `--sjdbGTFfile` supported, including
     `geneInfo.tab` / `transcriptInfo.tab` / `exonInfo.tab` /
     `exonGeTrInfo.tab` / `sjdbList.fromGTF.out.tab`
+  - `--genomeFastaFiles` and `--sjdbGTFfile` accept plain text plus
+    `.gz`, `.xz`, `.bz`, and `.bz2` inputs
 - `alignReads`:
   - SE + PE
   - deterministic multithreaded output
@@ -83,6 +85,8 @@ cargo build --release -p star-cli
   - chimeric Old path
   - `--quantMode GeneCounts`
   - `--outSAMtype BAM Unsorted` minimum viable output
+  - `--readFilesIn` and `--sjdbFileChrStartEnd` accept plain text plus
+    `.gz`, `.xz`, `.bz`, and `.bz2` inputs
 - Byte-exact checks currently cover:
   - `Aligned.out.sam` body
   - `SJ.out.tab`
